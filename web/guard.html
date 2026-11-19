@@ -1,0 +1,296 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>NEARL Guard</title>
+<meta name="description" content="Create a wallet your AI agent can use but cannot empty: daily caps, per-trade caps, approved recipients, owner-only withdrawals.">
+<link rel="icon" href="favicon.svg?v=1" type="image/svg+xml">
+<link rel="alternate icon" href="logo-icon.png?v=1" type="image/png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Source+Code+Pro:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="theme.css?v=7">
+<style>
+/* Layout: intro + create form, then one console per Guard: status, balances, limits, allowlists, activity */
+.head{padding-block:48px 24px;display:grid;gap:12px;max-width:760px}
+.head h1{font-size:clamp(34px,5vw,56px);font-weight:800;line-height:1.02}
+.head p{color:var(--ink-2);font-size:17px}
+.panel{background:var(--surface);border:1px solid var(--rule);border-radius:16px;padding:20px;display:grid;gap:14px;min-width:0}
+.panel h2{font-size:22px;font-weight:800}
+.panel h3{font-size:15px;font-weight:600;font-family:var(--f-body);letter-spacing:0}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media (max-width:860px){.grid2{grid-template-columns:1fr}}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.row input,.row select{flex:1 1 160px;min-width:0;font:14px var(--f-mono);padding:11px 12px;border-radius:10px;border:1px solid var(--rule);background:var(--paper);color:var(--ink)}
+label.l{font:500 12px var(--f-mono);letter-spacing:.06em;text-transform:uppercase;color:var(--ink-2)}
+.kv{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+@media (max-width:640px){.kv{grid-template-columns:1fr 1fr}}
+.kv div{border-top:2px solid var(--rule);padding-top:8px;min-width:0}
+.kv span{display:block;font:500 11.5px var(--f-mono);letter-spacing:.06em;text-transform:uppercase;color:var(--ink-2)}
+.kv b{display:block;font:500 16px var(--f-mono);overflow-wrap:anywhere}
+.addr{font:13px var(--f-mono);color:var(--ink-2);overflow-wrap:anywhere}
+.list{display:grid;gap:6px}
+.list .it{display:flex;justify-content:space-between;gap:10px;align-items:center;padding:8px 10px;border:1px solid var(--rule);border-radius:10px;font:13px var(--f-mono);overflow-wrap:anywhere}
+.list .it button{flex:none}
+.log{display:grid;gap:0;border:1px solid var(--rule);border-radius:12px;overflow:hidden}
+.log div{display:grid;grid-template-columns:1fr auto;gap:10px;padding:9px 12px;border-bottom:1px solid var(--rule);font-size:13.5px}
+.log div:last-child{border-bottom:0}
+.log a{font:12.5px var(--f-mono);color:var(--ink-2);text-decoration:none}
+.note{font-size:13.5px;color:var(--ink-2)}
+.warnbox{padding:10px 12px;border-radius:10px;background:var(--warn-soft);color:var(--warn);font-size:13.5px}
+.empty{border:1px dashed var(--rule);border-radius:14px;padding:24px;text-align:center;color:var(--ink-2)}
+.tabs{display:flex;gap:6px;flex-wrap:wrap}
+.tabs button{font:500 13px var(--f-mono);border:1px solid var(--rule);background:transparent;color:var(--ink-2);padding:7px 12px;border-radius:8px;cursor:pointer}
+.tabs button[aria-pressed="true"]{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.pillp{font:500 11.5px var(--f-mono);padding:4px 9px;border-radius:6px;border:1px solid currentColor}
+.pon{color:var(--good)}.poff{color:var(--bad)}
+section{margin-top:16px}
+.seg{display:inline-flex;border:1px solid var(--rule);border-radius:999px;padding:3px}
+.seg button{border:0;background:transparent;color:var(--ink-2);padding:5px 12px;border-radius:999px;cursor:pointer;font:500 13px var(--f-body)}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--paper)}
+</style>
+</head>
+<body>
+<nav class="topnav">
+  <div class="in">
+    <a class="brand" href="index.html"><span class="logo" aria-hidden="true"></span>NEARL</a>
+    <div class="links"><a href="token.html">$NEARL</a><a href="check.html">Check</a><a href="swap.html">Swap</a><a href="guard.html" aria-current="page">Guard</a><a href="app.html">Earn</a><a href="docs.html">Docs</a></div>
+    <div class="seg" role="group" aria-label="Network">
+      <button type="button" id="net-testnet" aria-pressed="true">Testnet</button>
+      <button type="button" id="net-mainnet" aria-pressed="false">Mainnet</button>
+    </div>
+    <button class="btn sm" type="button" id="wallet-btn">Connect wallet</button>
+  </div>
+</nav>
+
+<main class="wrap">
+  <header class="head">
+    <span class="status test" id="netstatus">Live · testnet</span>
+    <h1>A wallet your agent can use but can't empty.</h1>
+    <p>Create a Guard, fund it, and give your agent its own key. The agent can only spend within your daily and per-trade limits, only pay addresses you approve, and every withdrawal goes back to you.</p>
+  </header>
+  <p class="warnbox" id="mainnet-warn" hidden style="margin:0 0 16px"><strong>Mainnet uses real money.</strong> Guard has not been audited by an outside firm yet. Its code is open and verified on-chain, its rules held through 24,000 random test actions without a single break, and two security scanners (Slither and Mythril) found no real issues. That lowers the risk but does not remove it: only put in amounts you can afford to lose and keep the agent's limits small. <a href="contracts.html#security" style="color:inherit;font-weight:600">How it was checked →</a></p>
+
+  <div class="grid2">
+    <section class="panel" style="margin:0">
+      <h2>Create a Guard</h2>
+      <p class="note">Your connected wallet becomes the owner. Use a separate wallet for the agent key, never your own.</p>
+      <label class="l" for="agent-new">Agent address</label>
+      <div class="row"><input id="agent-new" placeholder="0x… the agent's wallet" spellcheck="false"><button class="btn primary" id="create" type="button">Create Guard</button></div>
+    </section>
+    <section class="panel" style="margin:0">
+      <h2>How it protects you</h2>
+      <div class="list">
+        <div class="it">Daily cap per token, resets every UTC day</div>
+        <div class="it">Per-trade cap per token</div>
+        <div class="it">Agent can only pay approved addresses</div>
+        <div class="it">Agent can only call approved contracts (DEX routers)</div>
+        <div class="it">Withdrawals only to the owner · one-click pause</div>
+      </div>
+    </section>
+  </div>
+
+  <section>
+    <div class="row" style="justify-content:space-between;margin:28px 0 12px"><h2 style="font-size:26px;font-weight:800">Your Guards</h2><div class="tabs" id="tabs"></div></div>
+    <div id="guards"><div class="empty">Connect your wallet to see your Guards.</div></div>
+  </section>
+
+  
+</main>
+
+<footer id="site-footer"></footer>
+
+<script src="https://cdn.jsdelivr.net/npm/ethers@6.13.4/dist/ethers.umd.min.js"></script>
+<script src="rpc.js?v=6"></script>
+<script src="logo.js?v=2"></script>
+<script src="footer.js"></script>
+<script src="wallet.js"></script>
+<script src="txkit.js?v=4"></script>
+<script>
+(function(){
+  "use strict";
+  const { ethers } = window, T = NearlTx, W = NearlWallet, $ = (id) => document.getElementById(id), esc = T.esc;
+  const FACTORY_ABI = ["function createGuard(address agent) returns (address)", "function guardsOf(address) view returns (address[])", "event GuardCreated(address indexed owner, address indexed agent, address guard)"];
+  const GUARD_ABI = [
+    "function owner() view returns (address)", "function agent() view returns (address)", "function paused() view returns (bool)",
+    "function limits(address) view returns (uint128 daily, uint128 perTx)", "function spentToday(address) view returns (uint256)",
+    "function allowedTarget(address) view returns (bool)", "function allowedRecipient(address) view returns (bool)",
+    "function setAgent(address)", "function setPaused(bool)", "function setLimit(address,uint128,uint128)",
+    "function setTarget(address,bool)", "function setRecipient(address,bool)", "function withdraw(address,uint256)",
+    "function pay(address token,address to,uint256 amount)",
+    "event TargetSet(address indexed target, bool allowed)", "event RecipientSet(address indexed recipient, bool allowed)",
+    "event Spent(address indexed token, address indexed to, uint256 amount, bytes4 selector, uint256 day)",
+    "event Withdrawn(address indexed token, uint256 amount)", "event Paused(bool paused)", "event LimitSet(address indexed token, uint256 daily, uint256 perTx)",
+    "event AgentChanged(address indexed agent)", "event Funded(address indexed from, uint256 amount)",
+    "error NotOwner()", "error NotAgent()", "error IsPaused()", "error NotAllowed()", "error OverPerTx()", "error OverDaily()", "error CallFailed(bytes)", "error ZeroAddress()",
+  ];
+  const ERC20 = ["function balanceOf(address) view returns (uint256)", "function transfer(address,uint256) returns (bool)"];
+  const MSG = { NotAllowed: "Not allowed: approve this address or set a limit for this token first.", OverPerTx: "Over the per-trade limit.", OverDaily: "Over today's limit.", IsPaused: "The Guard is paused.", NotAgent: "Only the agent key can do this.", NotOwner: "Only the owner can do this." };
+  const gIface = new ethers.Interface(GUARD_ABI);
+  let dep, selected = null, guards = [];
+  const short = (a) => a.slice(0, 6) + "…" + a.slice(-4);
+  const tUSD = (v) => Number(ethers.formatUnits(v, 6)).toLocaleString("en-US", { maximumFractionDigits: 2 });
+  let SYM = "tUSD";
+  const eth = (v) => Number(ethers.formatEther(v)).toLocaleString("en-US", { maximumFractionDigits: 5 });
+
+  async function load() {
+    dep = await T.deployment();
+    SYM = dep.assetSymbol || "tUSD";
+    if (!dep.guardFactory) { $("tabs").innerHTML = ""; $("guards").innerHTML = '<div class="empty">Guard is not deployed on this network yet.</div>'; return; }
+    if (!W.account) { $("guards").innerHTML = '<div class="empty">Connect your wallet to see your Guards.</div>'; $("tabs").innerHTML = ""; return; }
+    const f = new ethers.Contract(dep.guardFactory, FACTORY_ABI, T.read);
+    guards = [...(await f.guardsOf(W.account))].reverse();
+    // Also show Guards where this wallet is the agent
+    const agentOf = await T.getLogsChunked({ address: dep.guardFactory, topics: [new ethers.Interface(FACTORY_ABI).getEvent("GuardCreated").topicHash, null, ethers.zeroPadValue(W.account, 32)] }, dep.guardStartBlock);
+    const asAgent = agentOf.map((l) => ethers.getAddress("0x" + l.data.slice(-40))).filter((g) => !guards.includes(g));
+    const all = guards.map((g) => ({ g, role: "owner" })).concat(asAgent.map((g) => ({ g, role: "agent" })));
+    if (!all.length) { $("tabs").innerHTML = ""; $("guards").innerHTML = '<div class="empty">No Guards yet. Create one above.</div>'; return; }
+    if (!selected || !all.some((x) => x.g === selected)) selected = all[0].g;
+    $("tabs").innerHTML = all.map((x) => `<button type="button" data-g="${x.g}" aria-pressed="${x.g === selected}">${short(x.g)}${x.role === "agent" ? " · agent" : ""}</button>`).join("");
+    $("tabs").querySelectorAll("button").forEach((b) => (b.onclick = () => { selected = b.dataset.g; load(); }));
+    await renderGuard(selected, all.find((x) => x.g === selected).role);
+  }
+
+  async function renderGuard(addr, role) {
+    const g = new ethers.Contract(addr, GUARD_ABI, T.read);
+    const usd = new ethers.Contract(dep.asset, ERC20, T.read);
+    const ETH = ethers.ZeroAddress;
+    const [agent, paused, lu, le, su, se, bu, be] = await Promise.all([
+      g.agent(), g.paused(), g.limits(dep.asset), g.limits(ETH), g.spentToday(dep.asset), g.spentToday(ETH), usd.balanceOf(addr), T.read.getBalance(addr),
+    ]);
+    const logs = await T.getLogsChunked({ address: addr }, dep.guardStartBlock);
+    const recips = new Map(), targets = new Map(), events = [];
+    for (const l of logs) {
+      let ev; try { ev = gIface.parseLog(l); } catch (_) { continue; }
+      if (!ev) continue;
+      if (ev.name === "RecipientSet") recips.set(ev.args.recipient, ev.args.allowed);
+      if (ev.name === "TargetSet") targets.set(ev.args.target, ev.args.allowed);
+      const tok = (a) => (a === ETH ? "ETH" : a.toLowerCase() === dep.asset.toLowerCase() ? SYM : short(a));
+      const amt = (a, v) => (a === ETH ? eth(v) : tUSD(v));
+      let text = null;
+      if (ev.name === "Spent") text = `Agent spent ${amt(ev.args.token, ev.args.amount)} ${tok(ev.args.token)} → ${short(ev.args.to)}`;
+      if (ev.name === "Withdrawn") text = `Owner withdrew ${amt(ev.args.token, ev.args.amount)} ${tok(ev.args.token)}`;
+      if (ev.name === "Paused") text = ev.args.paused ? "Agent paused" : "Agent resumed";
+      if (ev.name === "LimitSet") text = `Limit for ${tok(ev.args.token)}: ${amt(ev.args.token, ev.args.daily)}/day, ${amt(ev.args.token, ev.args.perTx)}/trade`;
+      if (ev.name === "RecipientSet") text = `${ev.args.allowed ? "Approved" : "Removed"} recipient ${short(ev.args.recipient)}`;
+      if (ev.name === "TargetSet") text = `${ev.args.allowed ? "Approved" : "Removed"} contract ${short(ev.args.target)}`;
+      if (ev.name === "AgentChanged") text = `Agent set to ${short(ev.args.agent)}`;
+      if (ev.name === "Funded") text = `Received ${eth(ev.args.amount)} ETH`;
+      if (text) events.push({ text, tx: l.transactionHash, block: l.blockNumber });
+    }
+    events.sort((a, b) => b.block - a.block);
+    const isOwner = role === "owner", isAgent = W.account && agent.toLowerCase() === W.account.toLowerCase();
+    const listOf = (m, kind) => [...m].filter(([, v]) => v).map(([a]) => `<div class="it"><span>${a}</span>${isOwner ? `<button class="btn sm ghost" type="button" data-rm="${kind}" data-a="${a}">Remove</button>` : ""}</div>`).join("") || '<p class="note">None yet.</p>';
+
+    $("guards").innerHTML = `
+      <div class="panel">
+        <div class="row" style="justify-content:space-between">
+          <div><h2>Guard ${short(addr)}</h2><p class="addr">${addr} · <a href="${T.NET.explorer}/address/${addr}" target="_blank" rel="noopener">explorer ↗</a></p></div>
+          <span class="pillp ${paused ? "poff" : "pon"}">${paused ? "Agent paused" : "Agent active"}</span>
+        </div>
+        <div class="kv">
+          <div><span>${SYM} balance</span><b>${tUSD(bu)}</b></div>
+          <div><span>ETH balance</span><b>${eth(be)}</b></div>
+          <div><span>${SYM} left today</span><b>${lu.daily > 0n ? tUSD(lu.daily > su ? lu.daily - su : 0n) : "blocked"}</b></div>
+          <div><span>Agent</span><b>${short(agent)}</b></div>
+        </div>
+        ${isOwner ? `
+        <div class="grid2">
+          <div class="panel" style="background:var(--paper)">
+            <h3>Fund the Guard with ${SYM}</h3>
+            <div class="row"><input id="fund-amt" type="number" min="0" step="any" placeholder="Amount (${SYM})"><button class="btn" id="fund" type="button">Send to Guard</button></div>
+            <h3>Withdraw to your wallet</h3>
+            <div class="row"><input id="wd-amt" type="number" min="0" step="any" placeholder="Amount (${SYM})"><button class="btn" id="wd" type="button">Withdraw</button></div>
+          </div>
+          <div class="panel" style="background:var(--paper)">
+            <h3>${SYM} limits</h3>
+            <p class="note">Now: ${lu.daily > 0n ? `${tUSD(lu.daily)} per day, ${tUSD(lu.perTx)} per trade` : `agent cannot spend ${SYM}`}</p>
+            <div class="row"><input id="lim-d" type="number" min="0" step="any" placeholder="Per day"><input id="lim-t" type="number" min="0" step="any" placeholder="Per trade"><button class="btn" id="lim" type="button">Save</button></div>
+            <h3>Pause</h3>
+            <div class="row"><button class="btn ${paused ? "primary" : ""}" id="pause" type="button">${paused ? "Resume agent" : "Pause agent"}</button></div>
+          </div>
+        </div>
+        <div class="grid2">
+          <div class="panel" style="background:var(--paper)">
+            <h3>Approved recipients (agent can pay these)</h3>
+            <div class="list">${listOf(recips, "r")}</div>
+            <div class="row"><input id="rc" placeholder="0x… address" spellcheck="false"><button class="btn" id="rc-add" type="button">Approve</button></div>
+          </div>
+          <div class="panel" style="background:var(--paper)">
+            <h3>Approved contracts (agent can call these)</h3>
+            <div class="list">${listOf(targets, "t")}</div>
+            <div class="row"><input id="tg" placeholder="0x… DEX router" spellcheck="false"><button class="btn" id="tg-add" type="button">Approve</button></div>
+            <p class="warnbox">Approve DEX routers only. Never approve a token contract.</p>
+          </div>
+        </div>
+        <div class="panel" style="background:var(--paper)">
+          <h3>Agent key</h3>
+          <div class="row"><input id="ag" placeholder="New agent address" spellcheck="false"><button class="btn" id="ag-set" type="button">Change agent</button></div>
+        </div>` : ""}
+        ${isAgent ? `
+        <div class="panel" style="background:var(--paper)">
+          <h3>You are this Guard's agent · test a payment</h3>
+          <div class="row"><input id="pay-to" placeholder="Approved recipient 0x…" spellcheck="false"><input id="pay-amt" type="number" min="0" step="any" placeholder="${SYM}"><button class="btn primary" id="pay" type="button">Pay from Guard</button></div>
+          <p class="note">The contract rejects anything outside the owner's rules.</p>
+        </div>` : ""}
+        <h3>Activity log</h3>
+        <div class="log">${events.slice(0, 15).map((e) => `<div><span>${esc(e.text)}</span><a href="${T.NET.explorer}/tx/${e.tx}" target="_blank" rel="noopener">tx ↗</a></div>`).join("") || "<div><span class='note'>No activity yet.</span></div>"}</div>
+      </div>`;
+
+    const amt6 = (id) => { const v = $(id).value; try { const x = ethers.parseUnits(v || "0", 6); if (x <= 0n) throw 0; return x; } catch (_) { T.toast("Enter a valid amount."); return null; } };
+    const addrOf = (id) => { try { return ethers.getAddress($(id).value.trim()); } catch (_) { T.toast("Enter a valid address (0x…)."); return null; } };
+    const opts = { iface: gIface, messages: MSG };
+    const w = (s) => new ethers.Contract(addr, GUARD_ABI, s);
+    const after = (r) => r && load();
+
+    if (isOwner) {
+      $("fund").onclick = async () => { const a = amt6("fund-amt"); if (a && !(await T.hasBalance(dep.asset, a))) return; if (a) after(await T.send("Fund Guard", (s) => new ethers.Contract(dep.asset, ERC20, s).transfer(addr, a))); };
+      $("wd").onclick = async () => { const a = amt6("wd-amt"); if (a) after(await T.send("Withdraw", (s) => w(s).withdraw(dep.asset, a), opts)); };
+      $("lim").onclick = async () => { const d = amt6("lim-d"), t = amt6("lim-t"); if (d && t) after(await T.send("Save limits", (s) => w(s).setLimit(dep.asset, d, t), opts)); };
+      $("pause").onclick = async () => after(await T.send(paused ? "Resume" : "Pause", (s) => w(s).setPaused(!paused), opts));
+      $("rc-add").onclick = async () => { const a = addrOf("rc"); if (a) after(await T.send("Approve recipient", (s) => w(s).setRecipient(a, true), opts)); };
+      $("tg-add").onclick = async () => { const a = addrOf("tg"); if (a) after(await T.send("Approve contract", (s) => w(s).setTarget(a, true), opts)); };
+      $("ag-set").onclick = async () => { const a = addrOf("ag"); if (a) after(await T.send("Change agent", (s) => w(s).setAgent(a), opts)); };
+      document.querySelectorAll("[data-rm]").forEach((b) => (b.onclick = async () => {
+        const a = b.dataset.a;
+        after(await T.send("Remove", (s) => (b.dataset.rm === "r" ? w(s).setRecipient(a, false) : w(s).setTarget(a, false)), opts));
+      }));
+    }
+    if (isAgent) {
+      $("pay").onclick = async () => { const to = addrOf("pay-to"), a = amt6("pay-amt"); if (to && a) after(await T.send("Pay", (s) => w(s).pay(dep.asset, to, a), opts)); };
+    }
+  }
+
+  function setNet(key) {
+    const n = T.setNet(key);
+    try { localStorage.setItem("nearl.guardnet", key); } catch (_) {}
+    $("net-testnet").setAttribute("aria-pressed", key === "testnet");
+    $("net-mainnet").setAttribute("aria-pressed", key === "mainnet");
+    $("netstatus").textContent = key === "mainnet" ? "Live · mainnet" : "Live · testnet";
+    $("netstatus").className = "status " + (key === "mainnet" ? "live" : "test");
+    $("mainnet-warn").hidden = key !== "mainnet";
+    selected = null;
+    $("guards").innerHTML = `<div class="empty">Loading ${n.name}…</div>`;
+    load().catch((e) => { console.error(e); $("guards").innerHTML = `<div class="empty">Could not reach ${n.name}. Refresh to try again.</div>`; });
+  }
+  $("net-testnet").onclick = () => setNet("testnet");
+  $("net-mainnet").onclick = () => setNet("mainnet");
+  let startNet = "testnet";
+  try { if (localStorage.getItem("nearl.guardnet") === "mainnet") startNet = "mainnet"; } catch (_) {}
+  T.setNet(startNet);
+
+  $("create").onclick = async () => {
+    let agent;
+    try { agent = ethers.getAddress($("agent-new").value.trim()); } catch (_) { return T.toast("Enter the agent's wallet address (0x…)."); }
+    if (W.account && agent.toLowerCase() === W.account.toLowerCase()) return T.toast("Use a different wallet for the agent, not your own.");
+    dep = await T.deployment();
+    const r = await T.send("Create Guard", (s) => new ethers.Contract(dep.guardFactory, FACTORY_ABI, s).createGuard(agent));
+    if (r) { selected = null; $("agent-new").value = ""; load(); }
+  };
+
+  T.wireWalletButton(() => load().catch((e) => { console.error(e); $("guards").innerHTML = `<div class="empty">Could not reach ${T.NET.name}. Refresh to try again.</div>`; }));
+})();
+</script>
+</body>
+</html>

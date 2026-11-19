@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>NEARL Stats</title>
+<meta name="description" content="Live NEARL numbers read straight from Robinhood Chain: pools, deposits and Guard wallets.">
+<link rel="icon" href="favicon.svg?v=1" type="image/svg+xml">
+<link rel="alternate icon" href="logo-icon.png?v=1" type="image/png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Source+Code+Pro:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="theme.css?v=7">
+<style>
+/* Layout: grouped stat tiles per product; every number is read live from the chain */
+.grp{margin-top:32px}
+.grp h2{font-size:22px;font-weight:800;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:14px}
+@media (max-width:820px){.tiles{grid-template-columns:1fr 1fr}}
+.tile{background:var(--surface);border:1px solid var(--rule);border-radius:14px;padding:16px;min-width:0}
+.tile span{display:block;font:500 11.5px var(--f-mono);letter-spacing:.08em;text-transform:uppercase;color:var(--ink-2)}
+.tile b{display:block;font:700 26px var(--f-mono);margin-top:6px;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.tile small{display:block;color:var(--ink-2);font-size:12.5px;margin-top:2px}
+.upd{color:var(--ink-2);font-size:13px;margin-top:20px}
+</style>
+</head>
+<body>
+<nav class="topnav">
+  <div class="in">
+    <a class="brand" href="index.html"><span class="logo" aria-hidden="true"></span>NEARL</a>
+    <div class="links"><a href="token.html">$NEARL</a><a href="check.html">Check</a><a href="swap.html">Swap</a><a href="guard.html">Guard</a><a href="app.html">Earn</a><a href="docs.html">Docs</a></div>
+  </div>
+</nav>
+
+<main class="wrap">
+  <header class="page-head">
+    <span class="eyebrow">Stats</span>
+    <h1 style="margin-top:10px">NEARL in numbers</h1>
+    <p>Read live from Robinhood Chain every time you open this page. Nothing here is typed in by hand.</p>
+  </header>
+
+  <div class="grp">
+    <h2>Earn <span class="status test">testnet</span></h2>
+    <div class="tiles">
+      <div class="tile"><span>Pools</span><b id="e-pools">—</b><small id="e-open"></small></div>
+      <div class="tile"><span>Deposited</span><b id="e-dep">—</b><small>test USD in pools</small></div>
+      <div class="tile"><span>Rewards locked</span><b id="e-res">—</b><small>prefunded by creators</small></div>
+      <div class="tile"><span>Rewards paid</span><b id="e-paid">—</b><small>checks that paid</small></div>
+    </div>
+  </div>
+
+  <div class="grp">
+    <h2>Guard <span class="status test">testnet</span></h2>
+    <div class="tiles">
+      <div class="tile"><span>Guards created</span><b id="g-count">—</b><small>agent wallets</small></div>
+    </div>
+  </div>
+
+  <div class="grp">
+    <h2>Mainnet <span class="status live">live</span></h2>
+    <div class="tiles">
+      <div class="tile"><span>Earn pools</span><b id="m-pools">—</b><small>with real USDG</small></div>
+      <div class="tile"><span>Deposited</span><b id="m-dep">—</b><small>USDG in pools</small></div>
+      <div class="tile"><span>Guard wallets</span><b id="m-guards">—</b><small>on mainnet</small></div>
+    </div>
+  </div>
+  <p class="upd" id="upd">Reading the chain…</p>
+</main>
+
+<footer id="site-footer"></footer>
+<script src="https://cdn.jsdelivr.net/npm/ethers@6.13.4/dist/ethers.umd.min.js"></script>
+<script src="rpc.js?v=6"></script>
+<script src="logo.js?v=2"></script>
+<script src="footer.js"></script>
+<script src="nearl.js?v=2"></script>
+<script>
+(function(){
+  "use strict";
+  const { ethers } = window, $ = (id) => document.getElementById(id);
+  const n = (v, dp = 0) => Number(v).toLocaleString("en-US", { maximumFractionDigits: dp });
+  const set = (id, v) => ($(id).textContent = v);
+
+  async function earn() {
+    const { pools } = await Nearl.pools("testnet");
+    set("e-pools", n(pools.length));
+    set("e-open", `${pools.filter((p) => p.joinable).length} open to join`);
+    set("e-dep", n(pools.reduce((a, p) => a + p.filled, 0)));
+    set("e-res", n(pools.reduce((a, p) => a + p.reserve, 0)));
+    set("e-paid", n(pools.reduce((a, p) => a + p.rewardsPaid, 0)));
+  }
+  async function guard() {
+    const dep = await Nearl.deployment("testnet");
+    const f = new ethers.Contract(dep.guardFactory, ["function guardCount() view returns (uint256)"], Nearl.provider("testnet"));
+    set("g-count", n(await f.guardCount()));
+  }
+  async function mainnet() {
+    const { dep, pools } = await Nearl.pools("mainnet");
+    set("m-pools", n(pools.length));
+    set("m-dep", n(pools.reduce((a, p) => a + p.filled, 0), 2));
+    if (dep && dep.guardFactory) {
+      const f = new ethers.Contract(dep.guardFactory, ["function guardCount() view returns (uint256)"], Nearl.provider("mainnet"));
+      set("m-guards", n(await f.guardCount()));
+    }
+  }
+
+  Promise.allSettled([earn(), guard(), mainnet()]).then((r) => {
+    const failed = r.filter((x) => x.status === "rejected").length;
+    set("upd", failed ? `Some numbers could not be read (${failed}). Refresh to try again.` : `Updated ${new Date().toLocaleTimeString()}.`);
+  });
+})();
+</script>
+</body>
+</html>

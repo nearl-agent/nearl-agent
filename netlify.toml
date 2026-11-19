@@ -1,0 +1,66 @@
+# Netlify: serve the static website in /web. No build step is needed.
+[build]
+  publish = "web"
+  command = ""
+
+# Always fetch the latest contract addresses after a redeploy.
+[[headers]]
+  for = "/deployments/*"
+  [headers.values]
+    Cache-Control = "no-cache"
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    X-Frame-Options = "DENY"
+
+# Serverless functions: NEARL Check API and MCP server
+[functions]
+  directory = "netlify/functions"
+  node_bundler = "esbuild"
+  included_files = ["web/rpc.js", "web/check-holders.js", "web/check.js", "web/probe-code.js", "web/v4-pools.js", "web/stock-tokens.js", "web/nearl-token.js", "web/logo.svg", "node_modules/@resvg/resvg-wasm/index_bg.wasm", "node_modules/@fontsource/inter/files/inter-latin-400-normal.woff", "node_modules/@fontsource/inter/files/inter-latin-600-normal.woff", "node_modules/@fontsource/inter/files/inter-latin-700-normal.woff", "node_modules/@fontsource/source-code-pro/files/source-code-pro-latin-500-normal.woff"]
+
+[[redirects]]
+  from = "/api/check"
+  to = "/.netlify/functions/check"
+  status = 200
+
+[[redirects]]
+  from = "/mcp"
+  to = "/.netlify/functions/mcp"
+  status = 200
+
+# Shared Check results: /s is the page a link preview reads, /og draws its card image.
+[[redirects]]
+  from = "/s"
+  to = "/.netlify/functions/share"
+  status = 200
+
+[[redirects]]
+  from = "/og"
+  to = "/.netlify/functions/og"
+  status = 200
+
+# The Season page is paused; send old links to Earn.
+[[redirects]]
+  from = "/season"
+  to = "/app.html"
+  status = 302
+
+[[redirects]]
+  from = "/season.html"
+  to = "/app.html"
+  status = 302
+
+# Credit has been removed; send old links to Guard.
+[[redirects]]
+  from = "/credit"
+  to = "/guard.html"
+  status = 301
+
+[[redirects]]
+  from = "/credit.html"
+  to = "/guard.html"
+  status = 301

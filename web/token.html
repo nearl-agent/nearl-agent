@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>$NEARL Token · NEARL</title>
+<meta name="description" content="The only official $NEARL contract address. $NEARL launches on Pons, on Robinhood Chain.">
+<link rel="icon" href="favicon.svg?v=1" type="image/svg+xml">
+<link rel="alternate icon" href="logo-icon.png?v=1" type="image/png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Source+Code+Pro:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="theme.css?v=7">
+<style>
+section{margin-top:36px}
+section h2{font-size:24px;font-weight:800;margin-bottom:6px}
+section > p{color:var(--ink-2);margin-bottom:14px;max-width:70ch}
+.ca{border:1px solid var(--rule);background:var(--surface);border-radius:14px;padding:22px;max-width:780px;margin-top:28px}
+.ca .lbl{display:flex;align-items:center;gap:8px;font:500 12.5px var(--f-mono);letter-spacing:.06em;text-transform:uppercase;color:var(--ink-2)}
+.ca .lbl i{width:8px;height:8px;border-radius:50%;background:var(--warn)}
+.ca.live .lbl i{background:var(--good)}
+.ca .addr{font:600 clamp(15px,2.4vw,21px) var(--f-mono);word-break:break-all;margin:14px 0 18px;color:var(--ink)}
+.ca .addr.none{color:var(--ink-2);font:500 17px var(--f-body);word-break:normal}
+.ca .acts{display:flex;gap:10px;flex-wrap:wrap}
+ul.rules{color:var(--ink-2);line-height:1.8;max-width:70ch;padding-left:20px}
+ul.rules strong{color:var(--ink)}
+</style>
+</head>
+<body>
+<nav class="topnav">
+  <div class="in">
+    <a class="brand" href="index.html"><span class="logo" aria-hidden="true"></span>NEARL</a>
+    <div class="links"><a href="token.html" aria-current="page">$NEARL</a><a href="check.html">Check</a><a href="swap.html">Swap</a><a href="guard.html">Guard</a><a href="app.html">Earn</a><a href="docs.html">Docs</a></div>
+  </div>
+</nav>
+
+<main class="wrap">
+  <header class="page-head">
+    <span class="eyebrow">$NEARL</span>
+    <h1 style="margin-top:10px">The official $NEARL address.</h1>
+    <p>$NEARL launches on Pons, on Robinhood Chain. This page is the one place NEARL publishes its contract address. Copy it from here, not from a chat, a DM or a reply.</p>
+  </header>
+
+  <div class="ca" id="ca">
+    <div class="lbl"><i></i><span id="status">Not launched yet</span></div>
+    <div class="addr none" id="addr">$NEARL has not launched. There is no official contract address yet.</div>
+    <div class="acts" id="acts"></div>
+  </div>
+
+  <section>
+    <h2>Stay safe</h2>
+    <ul class="rules">
+      <li><strong>Only this page counts.</strong> Until an address appears above, any token called NEARL is not ours.</li>
+      <li><strong>Never from a DM.</strong> NEARL will never message you first with a contract address, a presale or a "whitelist".</li>
+      <li><strong>Check it like any other token.</strong> $NEARL gets no special treatment in Check: the same rules and the same score as every other token. Check marks it as NEARL's own token so you know.</li>
+      <li><strong>Not investment advice.</strong> A new token can lose all its value. Only buy what you can afford to lose.</li>
+    </ul>
+  </section>
+</main>
+
+<footer id="site-footer"></footer>
+<script src="logo.js?v=2"></script>
+<script src="footer.js?v=3"></script>
+<script src="nearl-token.js?v=1"></script>
+<script>
+(function () {
+  "use strict";
+  const EX = "https://robinhoodchain.blockscout.com";
+  const T = window.NearlToken || {};
+  const $ = (id) => document.getElementById(id);
+  const a = String(T.address || "").trim();
+  if (!/^0x[0-9a-fA-F]{40}$/.test(a)) return; // not launched yet: keep the default text
+
+  $("ca").classList.add("live");
+  $("status").textContent = "Live on Robinhood Chain" + (T.launched ? " · since " + new Date(T.launched).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" }) : "");
+  $("addr").classList.remove("none");
+  $("addr").textContent = a;
+  const links = [
+    `<button class="btn primary sm" type="button" id="copy">Copy address</button>`,
+    `<a class="btn sm" href="check.html?token=${a}">Check it with NEARL</a>`,
+    `<a class="btn sm" href="${EX}/token/${a}" target="_blank" rel="noopener">View on explorer ↗</a>`,
+  ];
+  if (/^https:\/\//.test(T.ponsUrl || "")) links.push(`<a class="btn sm" href="${T.ponsUrl.replace(/"/g, "%22")}" target="_blank" rel="noopener">Open on Pons ↗</a>`);
+  $("acts").innerHTML = links.join("");
+  $("copy").addEventListener("click", async (e) => {
+    try { await navigator.clipboard.writeText(a); e.target.textContent = "Copied"; setTimeout(() => (e.target.textContent = "Copy address"), 1500); } catch (_) {}
+  });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,93 @@
+# Static security scan of the NEARL contracts with Slither (Trail of Bits). Runs on demand and when
+# contracts change. Results are printed in the job log and kept as a JSON artifact for 30 days.
+name: Security scan
+
+on:
+  workflow_dispatch: {}
+  push:
+    paths:
+      - "contracts/**"
+      - ".github/workflows/security-scan.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  slither:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - name: Compile with Hardhat
+        env:
+          HARDHAT_DISABLE_TELEMETRY_PROMPT: "true"
+        run: npx hardhat compile
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install Slither
+        run: pip install --quiet slither-analyzer==0.10.4 solc-select==1.0.4
+      # Test helpers (contracts/test) and simulation-only probes (contracts/tools) are never deployed,
+      # so only the deployed contracts are scanned. The run never fails the build: findings are read
+      # and triaged by hand.
+      - name: Run Slither
+        env:
+          HARDHAT_DISABLE_TELEMETRY_PROMPT: "true"
+        run: |
+          slither . --hardhat-ignore-compile \
+            --filter-paths "node_modules|contracts/test|contracts/tools" \
+            --exclude-dependencies \
+            --json slither.json || true
+          echo "================ SUMMARY ================"
+          slither . --hardhat-ignore-compile \
+            --filter-paths "node_modules|contracts/test|contracts/tools" \
+            --exclude-dependencies --print human-summary || true
+      - uses: actions/upload-artifact@v4
+        with:
+          name: slither-report
+          path: slither.json
+          retention-days: 30
+
+  # Second opinion with a different technique: Mythril (ConsenSys) explores the contracts' execution
+  # paths symbolically, looking for reachable states that lose funds or break access control.
+  mythril:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+      # Reuse the solc 0.8.24 binary Hardhat downloads, instead of a second download that can be refused.
+      - name: Compile with Hardhat (fetches solc 0.8.24)
+        env:
+          HARDHAT_DISABLE_TELEMETRY_PROMPT: "true"
+        run: npx hardhat compile
+      - name: Put Hardhat's solc on the PATH
+        run: |
+          SOLC=$(find ~/.cache/hardhat-nodejs -type f -name 'solc-linux-amd64-v0.8.24*' | head -1)
+          test -n "$SOLC" && chmod +x "$SOLC" && sudo ln -sf "$SOLC" /usr/local/bin/solc && solc --version
+      - name: Install Mythril
+        run: pip install --quiet mythril==0.24.8
+      - name: Run Mythril on the deployed contracts
+        run: |
+          printf '{"remappings":["@openzeppelin/=node_modules/@openzeppelin/"],"optimizer":{"enabled":true,"runs":200},"viaIR":true,"evmVersion":"paris"}' > solc.json
+          for c in contracts/guard/NearlGuard.sol:NearlGuard contracts/guard/NearlGuardFactory.sol:NearlGuardFactory contracts/NearlNotes.sol:NearlNotes; do
+            echo "================ $c ================"
+            myth analyze "$c" --solc-json solc.json --execution-timeout 600 --max-depth 22 -o markdown | tee -a mythril.md || true
+          done
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mythril-report
+          path: mythril.md
+          retention-days: 30

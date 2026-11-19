@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>NEARL Privacy</title>
+<meta name="description" content="What data NEARL collects (very little), why, and what third parties see when you use it.">
+<link rel="icon" href="favicon.svg?v=1" type="image/svg+xml">
+<link rel="alternate icon" href="logo-icon.png?v=1" type="image/png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Source+Code+Pro:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="theme.css?v=7">
+</head>
+<body>
+<nav class="topnav">
+  <div class="in">
+    <a class="brand" href="index.html"><span class="logo" aria-hidden="true"></span>NEARL</a>
+    <div class="links"><a href="token.html">$NEARL</a><a href="check.html">Check</a><a href="swap.html">Swap</a><a href="guard.html">Guard</a><a href="app.html">Earn</a><a href="docs.html">Docs</a></div>
+  </div>
+</nav>
+
+<main class="wrap">
+  <header class="page-head">
+    <span class="eyebrow">Legal</span>
+    <h1 style="margin-top:10px">Privacy</h1>
+    <p>Last updated 18 November 2026.</p>
+  </header>
+
+  <div class="doc-layout">
+    <aside class="toc" aria-label="On this page">
+      <a href="#short">The short version</a>
+      <a href="#collect">What we collect</a>
+      <a href="#device">Stored on your device</a>
+      <a href="#chain">The blockchain is public</a>
+      <a href="#third">Third parties</a>
+      <a href="#api">API and MCP</a>
+      <a href="#rights">Your choices</a>
+      <a href="#changes">Changes</a>
+    </aside>
+
+    <article class="prose">
+      <h2 id="short">The short version</h2>
+      <ul>
+        <li>No accounts, no sign-up, no email collection.</li>
+        <li>No analytics, advertising or tracking cookies.</li>
+        <li>NEARL never receives your private key or seed phrase.</li>
+        <li>Your wallet address and transactions are public on Robinhood Chain, like every blockchain.</li>
+      </ul>
+
+      <h2 id="collect">What we collect</h2>
+      <p>The NEARL website is a static site. Almost everything (Check, Guard, Earn) runs in your browser and talks directly to the public Robinhood Chain RPC.</p>
+      <div class="tbl"><table>
+        <thead><tr><th>Data</th><th>When</th><th>Why</th><th>Kept for</th></tr></thead>
+        <tbody>
+          <tr><td>IP address and request details</td><td>When you load the website</td><td>Standard web server logs at our host, Netlify</td><td>As set by Netlify</td></tr>
+          <tr><td>IP address</td><td>When you call the Check API or MCP server</td><td>Rate limiting (20 checks per minute)</td><td>About one minute</td></tr>
+          <tr><td>Token address you checked and its result</td><td>When you call the Check API or MCP server</td><td>A short cache so repeat checks are fast</td><td>About two minutes</td></tr>
+        </tbody>
+      </table></div>
+      <p>We do not sell or share this data, and we do not combine it with your wallet address.</p>
+
+      <h2 id="device">Stored on your device</h2>
+      <p>NEARL saves two small preferences in your browser's local storage: which wallet you connected last (so it can reconnect) and which network you picked on the Earn page. Nothing else. Clearing your browser data removes them.</p>
+
+      <h2 id="chain">The blockchain is public</h2>
+      <p>When you connect a wallet and send a transaction, your wallet address, the transaction and its amounts are recorded permanently on Robinhood Chain. Anyone can see them, and NEARL pages such as the onchain ledger display them. This is how public blockchains work and cannot be undone.</p>
+
+      <h2 id="third">Third parties</h2>
+      <p>Your browser connects to these services when you use NEARL. Each has its own privacy policy.</p>
+      <div class="tbl"><table>
+        <thead><tr><th>Service</th><th>What it receives</th></tr></thead>
+        <tbody>
+          <tr><td>Netlify (hosting)</td><td>Website requests, API and MCP requests</td></tr>
+          <tr><td>Robinhood Chain RPC</td><td>Read requests and signed transactions from your browser</td></tr>
+          <tr><td>Google Fonts</td><td>Font requests</td></tr>
+          <tr><td>jsDelivr (CDN)</td><td>A request for the ethers.js library</td></tr>
+          <tr><td>Your wallet (for example MetaMask)</td><td>Connection and signing requests you approve</td></tr>
+          <tr><td>Blockscout explorer</td><td>Only if you click an explorer link</td></tr>
+        </tbody>
+      </table></div>
+
+      <h2 id="api">API and MCP</h2>
+      <p>If you connect an AI agent to the NEARL API or MCP server, the agent sends us the token address it wants checked. We do not receive your prompts, conversations or wallet keys.</p>
+
+      <h2 id="rights">Your choices</h2>
+      <p>You can use the Check page without connecting a wallet. You can disconnect your wallet at any time from the NEARL pages or from your wallet's settings. Data written to the blockchain cannot be deleted by anyone.</p>
+
+      <h2 id="changes">Changes</h2>
+      <p>If we add anything that collects more data, we will update this page first. The date at the top shows the latest version.</p>
+
+      <div class="callout">This policy describes how NEARL works today. It is not legal advice; have it reviewed for the rules in your country before launching with real users.</div>
+    </article>
+  </div>
+</main>
+
+<footer id="site-footer"></footer>
+<script src="logo.js?v=2"></script>
+<script src="footer.js"></script>
+</body>
+</html>

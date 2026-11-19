@@ -1,0 +1,13 @@
+{
+  "label": "ETH / USD (test)",
+  "feed": "mock",
+  "barrierBps": 7000,
+  "autocallBps": 10000,
+  "couponBps": 240,
+  "maxPriceAgeSeconds": 172800,
+  "subscriptionHours": 72,
+  "observationIntervalDays": 1,
+  "observations": 4,
+  "perUserCap": 5000,
+  "totalCap": 100000
+}

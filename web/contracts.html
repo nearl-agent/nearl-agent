@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>NEARL Contracts</title>
+<meta name="description" content="Every NEARL contract address on Robinhood Chain, with links to verified source code.">
+<link rel="icon" href="favicon.svg?v=1" type="image/svg+xml">
+<link rel="alternate icon" href="logo-icon.png?v=1" type="image/png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Source+Code+Pro:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="theme.css?v=7">
+<style>
+.copy{border:1px solid var(--rule);background:transparent;color:var(--ink-2);border-radius:6px;padding:2px 8px;font:500 12px var(--f-mono);cursor:pointer;margin-left:6px}
+.ok{color:var(--good)}.pend{color:var(--warn)}
+section{margin-top:36px}
+section h2{font-size:24px;font-weight:800;margin-bottom:6px}
+section > p{color:var(--ink-2);margin-bottom:14px;max-width:70ch}
+ol.steps{color:var(--ink-2);line-height:1.8;max-width:70ch}
+</style>
+</head>
+<body>
+<nav class="topnav">
+  <div class="in">
+    <a class="brand" href="index.html"><span class="logo" aria-hidden="true"></span>NEARL</a>
+    <div class="links"><a href="token.html">$NEARL</a><a href="check.html">Check</a><a href="swap.html">Swap</a><a href="guard.html">Guard</a><a href="app.html">Earn</a><a href="docs.html">Docs</a></div>
+  </div>
+</nav>
+
+<main class="wrap">
+  <header class="page-head">
+    <span class="eyebrow">Contracts</span>
+    <h1 style="margin-top:10px">Every address, in the open</h1>
+    <p>These are the only official NEARL contracts. Always check an address here before you approve a transaction.</p>
+  </header>
+
+  <section>
+    <h2>Robinhood Chain (mainnet)</h2>
+    <p>Real money. Earn and Guard are deployed. One small ETH/USD Earn pool is open (max 10 USDG per wallet, 100 USDG total), priced by Chainlink.</p>
+    <div class="tbl"><table><thead><tr><th>Contract</th><th>Address</th><th>Source</th></tr></thead><tbody id="mainnet"></tbody></table></div>
+  </section>
+
+  <section>
+    <h2>Robinhood Chain Testnet</h2>
+    <p>Worthless test tokens. Use these to try Guard and Earn for free.</p>
+    <div class="tbl"><table><thead><tr><th>Contract</th><th>Address</th><th>Source</th></tr></thead><tbody id="testnet"></tbody></table></div>
+  </section>
+
+  <section>
+    <h2>Third-party contracts NEARL reads</h2>
+    <p>NEARL does not own these. Check uses them to find pools and prices.</p>
+    <div class="tbl"><table><thead><tr><th>Contract</th><th>Address</th><th>Used for</th></tr></thead><tbody id="external"></tbody></table></div>
+  </section>
+
+  <section id="security">
+    <h2>Security: how the contracts were checked</h2>
+    <p>NEARL's contracts have <strong>not been audited by an outside firm yet</strong>. Until they are, this is everything that has been done, so you can judge the risk yourself.</p>
+    <div class="tbl"><table><thead><tr><th>Check</th><th>What it covers</th><th>Result</th></tr></thead><tbody>
+      <tr><td>Verified source</td><td>The deployed bytecode matches the published source (Blockscout and Sourcify)</td><td class="ok">Exact match</td></tr>
+      <tr><td>Unit tests</td><td>Earn and Guard: the main rules, permissions and payouts</td><td class="ok">26 passing</td></tr>
+      <tr><td>Guard fuzz test</td><td>Random actions by the owner, the agent and outsiders, with time jumps, checked against Guard's rules after every step</td><td class="ok">0 violations in 24,000 actions (last full run); 2,400 on every test run</td></tr>
+      <tr><td>Earn solvency test</td><td>Random deposits and price paths: the contract can always pay every depositor and the pool creator</td><td class="ok">Passing</td></tr>
+      <tr><td>Mainnet fork test</td><td>The live mainnet contracts run end to end on a copy of Robinhood Chain: four Earn scenarios and every Guard limit</td><td class="ok">35 checks passing</td></tr>
+      <tr><td>Slither scan</td><td>Static analysis by Trail of Bits' Slither</td><td class="ok">0 high; 15 lower findings reviewed: false alarms or intended</td></tr>
+      <tr><td>Mythril scan</td><td>Symbolic execution by ConsenSys' Mythril, a time-limited run (up to 10 minutes per contract)</td><td class="ok">No issues detected</td></tr>
+    </tbody></table></div>
+    <p class="callout"><strong>None of this proves the contracts are bug-free.</strong> Tests only cover the cases someone thought of, fuzzing tries many but not all combinations, and scanners look for known patterns. It lowers the risk; it does not remove it.</p>
+    <p><strong>Known limits.</strong> No third-party audit yet. Earn does not check Chainlink's sequencer uptime feed (stale prices are still rejected). Earn and Guard support standard ERC-20 tokens only. That is why mainnet amounts stay small and capped.</p>
+  </section>
+
+  <section id="verify">
+    <h2>Verify a contract yourself</h2>
+    <ol class="steps">
+      <li>Open the address on the Blockscout explorer from the table above.</li>
+      <li>Go to the <strong>Contract</strong> tab. A verified contract shows its full Solidity source code.</li>
+      <li>Compare it with the code in the NEARL repository (<code>contracts/</code>).</li>
+      <li>Never approve a transaction to an address that is not listed on this page.</li>
+    </ol>
+    <p class="callout info">Every NEARL contract on mainnet and testnet is verified with an exact source match. Mainnet sources are also published on <a href="https://repo.sourcify.dev/4663/0xBC4433dcf2C04c6a5f2ebF435519682636261996" target="_blank" rel="noopener">Sourcify</a>.</p>
+  </section>
+</main>
+
+<footer id="site-footer"></footer>
+<script src="logo.js?v=2"></script>
+<script src="footer.js"></script>
+<script>
+(function(){
+  "use strict";
+  const EX = { mainnet: "https://robinhoodchain.blockscout.com", testnet: "https://explorer.testnet.chain.robinhood.com" };
+  const row = (net, name, addr, status) => `<tr><td>${name}</td><td class="mono"><a href="${EX[net]}/address/${addr}" target="_blank" rel="noopener">${addr}</a><button class="copy" type="button" data-a="${addr}">Copy</button></td><td>${status}</td></tr>`;
+  const verified = (net, addr) => `<a class="ok" href="${EX[net]}/address/${addr}#code" target="_blank" rel="noopener">Verified ↗</a>`;
+  const pending = '<span class="pend">Not yet verified</span>';
+
+  async function load(net) {
+    const r = await fetch(`deployments/${net}.json`, { cache: "no-store" });
+    if (!r.ok) return `<tr><td colspan="3">Not deployed yet.</td></tr>`;
+    const d = await r.json();
+    const rows = [];
+    if (d.notes) rows.push(row(net, "NearlNotes (Earn pools)", d.notes, verified(net, d.notes)));
+    if (d.guardFactory) rows.push(row(net, "NearlGuardFactory (Guard)", d.guardFactory, verified(net, d.guardFactory)));
+    if (d.asset) rows.push(row(net, net === "testnet" ? "tUSD (NEARL test dollar)" : `${d.assetSymbol} (Paxos, deposit token)`, d.asset, net === "testnet" ? verified(net, d.asset) : "Third party"));
+    if (d.mockFeed) rows.push(row(net, "Test ETH/USD price feed (keeper)", d.mockFeed, "Test only"));
+    for (const [addr, label] of Object.entries(d.feeds || {})) if (net === "mainnet") rows.push(row(net, `Chainlink ${label} price feed`, addr, "Chainlink"));
+    return rows.join("");
+  }
+
+  const ext = [
+    ["Uniswap v3 Factory", "0x1f7d7550b1b028f7571e69a784071f0205fd2efa", "Find v3 pools"],
+    ["Uniswap v4 PoolManager", "0x8366a39CC670B4001A1121B8F6A443A643e40951", "Find and simulate v4 pools (incl. Pons)"],
+    ["Uniswap v4 StateView", "0xF3334192D15450CdD385c8B70e03f9A6bD9E673b", "Read v4 pool prices"],
+    ["Pons V2 launch factory", "0x7eD598BcEf8bd9Edd8C97A195C6d13f40801EC7e", "Find Pons launches and their curves"],
+    ["WETH", "0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73", "Price and pool pairs"],
+    ["USDG", "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168", "Price and pool pairs"],
+  ];
+  document.getElementById("external").innerHTML = ext.map(([n, a, u]) => row("mainnet", n, a, u)).join("");
+  Promise.all([load("mainnet"), load("testnet")]).then(([m, t]) => {
+    document.getElementById("mainnet").innerHTML = m;
+    document.getElementById("testnet").innerHTML = t;
+  });
+
+  document.addEventListener("click", async (e) => {
+    const b = e.target.closest(".copy");
+    if (!b) return;
+    try { await navigator.clipboard.writeText(b.dataset.a); b.textContent = "Copied"; setTimeout(() => (b.textContent = "Copy"), 1500); } catch (_) {}
+  });
+})();
+</script>
+</body>
+</html>

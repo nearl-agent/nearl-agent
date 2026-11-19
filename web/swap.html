@@ -1,0 +1,382 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>NEARL Swap</title>
+<meta name="description" content="Swap on Robinhood Chain through Uniswap, with a NEARL safety check before every buy. NEARL routes the order; liquidity comes from Uniswap.">
+<link rel="icon" href="favicon.svg?v=1" type="image/svg+xml">
+<link rel="alternate icon" href="logo-icon.png?v=1" type="image/png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Source+Code+Pro:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="theme.css?v=7">
+<style>
+/* Layout: a single swap card in the centre (pay → receive), the NEARL Check verdict under the token,
+   route + minimum received, then the action button. A short "how it works" strip below. */
+.head{padding-block:44px 18px;display:grid;gap:10px;justify-items:center;text-align:center}
+.head h1{font-size:clamp(32px,5vw,52px);font-weight:800;line-height:1.02}
+.head p{color:var(--ink-2);max-width:40em}
+.card{max-width:520px;margin:0 auto;background:var(--surface);border:1px solid var(--rule);border-radius:20px;padding:16px;display:grid;gap:10px}
+.tabs{display:flex;gap:6px}
+.tabs button{flex:1;font:600 14px var(--f-body);border:1px solid var(--rule);background:transparent;color:var(--ink-2);padding:9px;border-radius:10px;cursor:pointer}
+.tabs button[aria-pressed="true"]{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.box{background:var(--paper);border:1px solid var(--rule);border-radius:14px;padding:14px;display:grid;gap:8px}
+.box .top{display:flex;justify-content:space-between;font:500 12px var(--f-mono);letter-spacing:.06em;text-transform:uppercase;color:var(--ink-2)}
+.box .top button{border:0;background:none;color:var(--accent);font:inherit;cursor:pointer;padding:0}
+.row{display:flex;gap:10px;align-items:center}
+.row input{flex:1;min-width:0;border:0;background:transparent;color:var(--ink);font:600 26px var(--f-mono);padding:0}
+.row input:focus{outline:none}
+.asset{display:flex;gap:6px}
+.asset button{font:600 13px var(--f-mono);border:1px solid var(--rule);background:var(--surface);color:var(--ink-2);padding:7px 10px;border-radius:999px;cursor:pointer}
+.asset button[aria-pressed="true"]{color:var(--ink);border-color:var(--accent)}
+.tok{display:flex;gap:8px}
+.tok input{flex:1;min-width:0;font:14px var(--f-mono);padding:10px 12px;border-radius:10px;border:1px solid var(--rule);background:var(--surface);color:var(--ink)}
+.out{font:600 26px var(--f-mono);color:var(--ink);overflow-wrap:anywhere}
+.out small{font:500 14px var(--f-body);color:var(--ink-2)}
+.verdict{border-radius:12px;padding:10px 12px;font-size:14px;display:flex;gap:10px;align-items:flex-start}
+.verdict b{font-family:var(--f-mono)}
+.v-safe{background:var(--good-soft);color:var(--good)}.v-care{background:var(--warn-soft);color:var(--warn)}.v-bad{background:var(--bad-soft);color:var(--bad)}.v-wait{background:var(--surface-2,var(--surface));color:var(--ink-2)}
+.verdict a{color:inherit}
+.meta{display:grid;gap:6px;font-size:13.5px;color:var(--ink-2);padding:2px 4px}
+.meta div{display:flex;justify-content:space-between;gap:10px}
+.meta b{color:var(--ink);font:500 13.5px var(--f-mono);text-align:right}
+.slip{display:flex;gap:6px}
+.slip button{font:500 12px var(--f-mono);border:1px solid var(--rule);background:transparent;color:var(--ink-2);padding:4px 9px;border-radius:999px;cursor:pointer}
+.slip button[aria-pressed="true"]{color:var(--ink);border-color:var(--accent)}
+.ack{display:flex;gap:8px;align-items:flex-start;font-size:13.5px;color:var(--bad)}
+.go{width:100%;padding:15px;font-size:16px}
+.swapmsg{font:500 13px var(--f-mono);color:var(--ink-2);text-align:center;min-height:1.4em;overflow-wrap:anywhere;margin:0}
+.swapmsg a{color:var(--accent)}
+.how{max-width:860px;margin:36px auto 0;display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+@media (max-width:760px){.how{grid-template-columns:1fr}}
+.how div{border-top:2px solid var(--rule);padding-top:12px}
+.how h3{font-size:16px;font-weight:700}
+.how p{color:var(--ink-2);font-size:14px;margin-top:4px}
+.fine{max-width:720px;margin:24px auto 0;text-align:center;color:var(--ink-2);font-size:13px}
+.card,.box,.meta,.meta div{min-width:0}
+.box .top{flex-wrap:wrap;gap:4px 10px}
+.meta b{min-width:0;overflow-wrap:anywhere}
+@media (max-width:520px){
+  .card{padding:12px}
+  .row{flex-wrap:wrap}
+  .row input{flex:1 1 100%;font-size:22px}
+  .out{font-size:22px}
+  .meta div{flex-wrap:wrap}
+}
+</style>
+</head>
+<body>
+<nav class="topnav">
+  <div class="in">
+    <a class="brand" href="index.html"><span class="logo" aria-hidden="true"></span>NEARL</a>
+    <div class="links"><a href="token.html">$NEARL</a><a href="check.html">Check</a><a href="swap.html" aria-current="page">Swap</a><a href="guard.html">Guard</a><a href="app.html">Earn</a><a href="docs.html">Docs</a></div>
+    <button class="btn sm" type="button" id="wallet-btn">Connect wallet</button>
+  </div>
+</nav>
+
+<main class="wrap">
+  <header class="head">
+    <span class="status live" style="color:var(--good)">Live · mainnet</span>
+    <h1>Swap, checked first.</h1>
+    <p>Buy and sell any Robinhood Chain token through Uniswap. NEARL scans the token before you trade and routes your order to the best Uniswap pool. No NEARL fee, and your funds never touch NEARL.</p>
+  </header>
+
+  <section class="card" aria-label="Swap">
+    <div class="tabs" role="group" aria-label="Direction">
+      <button type="button" id="t-buy" aria-pressed="true">Buy token</button>
+      <button type="button" id="t-sell" aria-pressed="false">Sell token</button>
+    </div>
+
+    <div class="box">
+      <div class="top"><span id="pay-l">You pay</span><span>Balance: <span id="bal-in">—</span> <button type="button" id="max">Max</button></span></div>
+      <div class="row">
+        <label class="sr" for="amt">Amount</label>
+        <input id="amt" inputmode="decimal" placeholder="0.0" autocomplete="off">
+        <div class="asset" id="base-in" role="group" aria-label="Pay with"><button type="button" data-a="ETH" aria-pressed="true">ETH</button><button type="button" data-a="USDG" aria-pressed="false">USDG</button></div>
+        <span id="tok-in-sym" class="mono" hidden></span>
+      </div>
+    </div>
+
+    <div class="box">
+      <div class="top"><span id="get-l">You receive</span><span>Balance: <span id="bal-out">—</span></span></div>
+      <div class="tok" id="tok-row"><label class="sr" for="tok">Token address</label><input id="tok" placeholder="Token address (0x…)" spellcheck="false" autocomplete="off"></div>
+      <div class="out" id="out">—</div>
+      <div class="asset" id="base-out" role="group" aria-label="Receive" hidden><button type="button" data-a="ETH" aria-pressed="true">ETH</button><button type="button" data-a="USDG" aria-pressed="false">USDG</button></div>
+    </div>
+
+    <div class="verdict v-wait" id="verdict">Paste a token address. NEARL checks it before you trade.</div>
+
+    <div class="meta">
+      <div><span>Route</span><b id="route">—</b></div>
+      <div><span>Minimum received</span><b id="min">—</b></div>
+      <div><span>Max slippage</span><span class="slip" id="slip"><button type="button" data-s="50" aria-pressed="false">0.5%</button><button type="button" data-s="100" aria-pressed="true">1%</button><button type="button" data-s="300" aria-pressed="false">3%</button></span></div>
+      <div><span>NEARL fee</span><b>0</b></div>
+    </div>
+
+    <label class="ack" id="ack-row" hidden><input type="checkbox" id="ack"> <span id="ack-text">I understand this token looks risky and I may lose what I put in.</span></label>
+    <button class="btn primary go" type="button" id="go" disabled>Enter an amount</button>
+    <p class="swapmsg" id="status" role="status" aria-live="polite"></p>
+  </section>
+
+  <section class="how">
+    <div><h3>1 · NEARL checks</h3><p>Honeypot test, taxes, owner powers and liquidity, before you buy. Risky tokens need an extra confirmation; tokens that can't be sold are blocked.</p></div>
+    <div><h3>2 · Uniswap fills</h3><p>Your order goes to the deepest Uniswap v3 or v4 pool on Robinhood Chain, including Pons launch pools.</p></div>
+    <div><h3>3 · You sign</h3><p>Every approval and swap is signed in your own wallet. NEARL never holds your funds.</p></div>
+  </section>
+  <p class="fine">Liquidity from Uniswap. NEARL is an interface that routes orders to Uniswap's public contracts on Robinhood Chain; it is not affiliated with Uniswap Labs. Swaps are capped while NEARL is new (0.05 ETH or 100 USDG per swap). Prices move; nothing here is investment advice.</p>
+</main>
+
+<footer id="site-footer"></footer>
+<script src="https://cdn.jsdelivr.net/npm/ethers@6.13.4/dist/ethers.umd.min.js"></script>
+<script src="rpc.js?v=6"></script>
+<script src="logo.js?v=2"></script>
+<script src="footer.js"></script>
+<script src="wallet.js"></script>
+<script src="probe-code.js?v=6"></script>
+<script src="v4-pools.js?v=1"></script>
+<script src="check-holders.js?v=1"></script>
+<script src="stock-tokens.js?v=1"></script>
+<script src="check.js?v=13"></script>
+<script src="swap.js?v=1"></script>
+<script>
+(function(){
+  "use strict";
+  const { ethers } = window, S = NearlSwap, W = NearlWallet, $ = (id) => document.getElementById(id);
+  const p = NearlRPC.provider(4663);
+  const CAP = { ETH: ethers.parseEther("0.05"), USDG: ethers.parseUnits("100", 6) };
+  const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+  const st = { dir: "buy", base: "ETH", slip: 100n, token: null, meta: null, check: null, routes: [], amountIn: 0n, busy: false };
+  const baseAddr = () => (st.base === "ETH" ? S.ETH : S.A.USDG);
+  const baseDec = () => (st.base === "ETH" ? 18 : 6);
+  const fmt = (v, d, dp = 6) => Number(ethers.formatUnits(v, d)).toLocaleString("en-US", { maximumFractionDigits: dp });
+  const status = (html) => ($("status").innerHTML = html);
+
+  // ---------- token info + NEARL Check
+  async function loadToken(addr) {
+    st.token = null; st.meta = null; st.check = null; st.routes = [];
+    const v = $("verdict");
+    let a;
+    try { a = ethers.getAddress(addr.trim()); } catch (_) { v.className = "verdict v-wait"; v.textContent = addr.trim() ? "That is not a valid address." : "Paste a token address. NEARL checks it before you trade."; render(); return; }
+    st.token = a;
+    const erc = new ethers.Contract(a, ["function symbol() view returns (string)", "function decimals() view returns (uint8)"], p);
+    try { const [sym, dec] = await Promise.all([erc.symbol(), erc.decimals()]); st.meta = { sym, dec: Number(dec) }; }
+    catch (_) { v.className = "verdict v-bad"; v.textContent = "No token at this address on Robinhood Chain."; st.token = null; render(); return; }
+    v.className = "verdict v-wait"; v.innerHTML = `Checking <b>${esc(st.meta.sym)}</b> with NEARL…`;
+    render(); requote(); balances();
+    try {
+      const r = await NearlCheck.check("mainnet", a, (s) => { if (st.token === a && !st.check) v.innerHTML = `Checking <b>${esc(st.meta.sym)}</b>: ${esc(s)}`; }, { holderDeadline: Date.now() + 6000 });
+      if (st.token !== a) return;
+      st.check = r;
+      const blocked = r.findings.some((f) => /Selling looks blocked/.test(f.title));
+      st.blocked = blocked;
+      const cls = blocked || r.score < 55 ? "v-bad" : r.score < 80 ? "v-care" : "v-safe";
+      const top = r.findings.filter((f) => f.level === "bad" || f.level === "warn").slice(0, 2).map((f) => esc(f.title)).join(" · ");
+      v.className = `verdict ${cls}`;
+      v.innerHTML = `<span>NEARL Check <b>${r.score}/100 · ${esc(r.verdict.text)}</b>${top ? `<br>${top}` : ""}${blocked ? "<br><b>Buying is disabled: a test sell failed (possible honeypot).</b>" : ""} · <a href="check.html?token=${a}" target="_blank" rel="noopener">full report ↗</a></span>`;
+    } catch (e) {
+      if (st.token !== a) return;
+      v.className = "verdict v-care"; v.textContent = "NEARL Check could not finish. Trade carefully.";
+    }
+    render();
+  }
+
+  // ---------- quotes
+  let qTimer = 0, qSeq = 0;
+  function requote() {
+    clearTimeout(qTimer);
+    qTimer = setTimeout(async () => {
+      st.routes = [];
+      const raw = $("amt").value.trim();
+      if (!st.token || !st.meta || !raw) { render(); return; }
+      let amt;
+      try { amt = ethers.parseUnits(raw, st.dir === "buy" ? baseDec() : st.meta.dec); } catch (_) { st.amountIn = 0n; render("Enter a valid amount"); return; }
+      st.amountIn = amt;
+      if (amt <= 0n) { render(); return; }
+      const seq = ++qSeq;
+      $("route").textContent = "finding the best Uniswap pool…";
+      const [inT, outT] = st.dir === "buy" ? [baseAddr(), st.token] : [st.token, baseAddr()];
+      try {
+        const routes = await S.quote(p, inT, outT, amt);
+        if (seq !== qSeq) return;
+        st.routes = routes;
+      } catch (_) { if (seq === qSeq) st.routes = []; }
+      render();
+    }, 450);
+  }
+
+  // ---------- balances
+  async function balances() {
+    if (!W.account) { $("bal-in").textContent = "—"; $("bal-out").textContent = "—"; return; }
+    const bal = async (t, d) => (t === S.ETH ? fmt(await p.getBalance(W.account), 18, 5) : fmt(await new ethers.Contract(t, ["function balanceOf(address) view returns (uint256)"], p).balanceOf(W.account), d, 4));
+    try {
+      const baseB = await bal(baseAddr(), baseDec());
+      const tokB = st.token && st.meta ? await bal(st.token, st.meta.dec) : "—";
+      $("bal-in").textContent = st.dir === "buy" ? `${baseB} ${st.base}` : `${tokB} ${st.meta ? st.meta.sym : ""}`;
+      $("bal-out").textContent = st.dir === "buy" ? `${tokB} ${st.meta ? st.meta.sym : ""}` : `${baseB} ${st.base}`;
+    } catch (_) {}
+  }
+
+  // ---------- render
+  function render(msg) {
+    const best = st.routes[0];
+    const outDec = st.dir === "buy" ? (st.meta ? st.meta.dec : 18) : baseDec();
+    const outSym = st.dir === "buy" ? (st.meta ? st.meta.sym : "") : st.base;
+    $("out").innerHTML = best ? `${fmt(best.amountOut, outDec)} <small>${esc(outSym)}</small>` : "—";
+    $("route").textContent = best ? best.label : st.amountIn > 0n && st.token ? "no Uniswap pool found" : "—";
+    const minOut = best ? (best.amountOut * (10000n - st.slip)) / 10000n : 0n;
+    $("min").textContent = best ? `${fmt(minOut, outDec)} ${outSym}` : "—";
+
+    const go = $("go");
+    const risky = st.check && st.check.score < 55;
+    $("ack-row").hidden = !(st.dir === "buy" && risky && !st.blocked);
+    let label = "Swap", ok = true;
+    const cap = st.dir === "buy" ? CAP[st.base] : null;
+    if (msg) { label = msg; ok = false; }
+    else if (!st.token) { label = "Paste a token address"; ok = false; }
+    else if (!(st.amountIn > 0n)) { label = "Enter an amount"; ok = false; }
+    else if (cap && st.amountIn > cap) { label = `Max ${st.base === "ETH" ? "0.05 ETH" : "100 USDG"} per swap for now`; ok = false; }
+    else if (!best) { label = "No route"; ok = false; }
+    else if (st.dir === "buy" && st.blocked) { label = "Blocked: possible honeypot"; ok = false; }
+    else if (st.dir === "buy" && !st.check) { label = "Waiting for NEARL Check…"; ok = false; }
+    else if (st.dir === "buy" && risky && !$("ack").checked) { label = "Confirm the risk above"; ok = false; }
+    else if (!W.account) { label = "Connect wallet"; }
+    go.textContent = st.busy ? "Working…" : label;
+    go.disabled = st.busy || (!ok && label !== "Connect wallet");
+  }
+
+  // ---------- chain + send
+  async function ensureMainnet(prov) {
+    const hex = "0x1237";
+    if (String(await prov.request({ method: "eth_chainId" })).toLowerCase() === hex) return;
+    try { await prov.request({ method: "wallet_switchEthereumChain", params: [{ chainId: hex }] }); }
+    catch (e) {
+      const code = e?.code ?? e?.data?.originalError?.code;
+      if (code !== 4902 && !/unrecognized|not added|unknown chain/i.test(e?.message || "")) throw e;
+      await prov.request({ method: "wallet_addEthereumChain", params: [{ chainId: hex, chainName: "Robinhood Chain", rpcUrls: NearlRPC.LISTS[4663], blockExplorerUrls: ["https://robinhoodchain.blockscout.com"], nativeCurrency: { name: "Ether", symbol: "ETH", decimals: 18 } }] });
+    }
+  }
+
+  // Runs a wallet request. If the wallet does not answer, show where to look after a few seconds and
+  // offer a Cancel button so the page never stays stuck on "Working…".
+  function walletStep(label, fn) {
+    return new Promise((resolve, reject) => {
+      let done = false;
+      status(`${label}. Confirm in your wallet…`);
+      const hint = setTimeout(() => {
+        if (done) return;
+        status(`${label}. Waiting for your wallet… If no window opened, click your wallet's icon in the browser toolbar (OKX, MetaMask, Rabby) and look for a pending request. <button type="button" class="btn sm" id="cancel-wait">Cancel</button>`);
+        const c = document.getElementById("cancel-wait");
+        if (c) c.onclick = () => { done = true; reject(Object.assign(new Error("Cancelled. If your wallet still shows the request, reject it there."), { cancelled: true })); };
+      }, 12000);
+      Promise.resolve().then(fn).then((v) => { if (!done) { done = true; clearTimeout(hint); resolve(v); } }, (e) => { if (!done) { done = true; clearTimeout(hint); reject(e); } });
+    });
+  }
+
+  $("go").addEventListener("click", async () => {
+    if (!W.account) { await W.open(); balances(); render(); return; }
+    const best = st.routes[0];
+    if (!best || st.busy) return;
+    st.busy = true; render();
+    try {
+      await walletStep("Switch your wallet to Robinhood Chain", () => ensureMainnet(W.provider));
+      const [inT, outT] = st.dir === "buy" ? [baseAddr(), st.token] : [st.token, baseAddr()];
+      // Re-quote right before sending, so the minimum is based on the latest price.
+      const fresh = (await S.quote(p, inT, outT, st.amountIn))[0];
+      if (!fresh) throw new Error("The pool no longer has a route for this amount.");
+      const minOut = (fresh.amountOut * (10000n - st.slip)) / 10000n;
+      const txs = await S.build(p, W.account, fresh, inT, outT, st.amountIn, minOut);
+      for (const [i, t] of txs.entries()) {
+        const step = `Step ${i + 1} of ${txs.length}: ${esc(t.label)}`;
+        status(`${step}. Preparing…`);
+        // Work out gas and fees ourselves through NEARL's Robinhood Chain RPC, so the wallet only has to
+        // show the confirmation. Some wallets hang when they must estimate gas on a chain they don't know well.
+        const call = { from: W.account, to: t.to, data: t.data, value: t.value };
+        let gas;
+        try { gas = await p.estimateGas(call); }
+        catch (e) {
+          // Approvals for later steps are not on chain yet, so a later step can only be estimated after them.
+          if (i < txs.length - 1 || txs.length === 1) throw new Error(`This step would fail on chain right now (${e.shortMessage || e.message}). Nothing was sent.`);
+          gas = 600000n;
+        }
+        const fee = await p.getFeeData();
+        const req = {
+          from: W.account, to: t.to, data: t.data,
+          value: ethers.toQuantity(t.value || 0n),
+          gas: ethers.toQuantity((gas * 130n) / 100n),
+        };
+        if (fee.maxFeePerGas) { req.maxFeePerGas = ethers.toQuantity(fee.maxFeePerGas * 2n); req.maxPriorityFeePerGas = ethers.toQuantity(fee.maxPriorityFeePerGas || 0n); }
+        else if (fee.gasPrice) req.gasPrice = ethers.toQuantity(fee.gasPrice * 2n);
+
+        const hash = await walletStep(`${step}`, () => W.provider.request({ method: "eth_sendTransaction", params: [req] }));
+        const link = `https://robinhoodchain.blockscout.com/tx/${hash}`;
+        status(`${step}. Sent, waiting for the chain… <a href="${link}" target="_blank" rel="noopener">view</a>`);
+        const rc = await p.waitForTransaction(hash, 1, 300000);
+        if (!rc) throw new Error(`Still pending after 5 minutes. Check it here: ${link}`);
+        if (rc.status !== 1) throw new Error(`${t.label} failed on chain. ${link}`);
+        if (i === txs.length - 1) status(`Swap done ✓ <a href="${link}" target="_blank" rel="noopener">View transaction</a>`);
+      }
+      $("amt").value = ""; st.amountIn = 0n; st.routes = [];
+      balances();
+    } catch (e) {
+      console.error(e);
+      const m = e?.cancelled ? e.message : e?.code === "ACTION_REJECTED" || e?.code === 4001 ? "You rejected the request in your wallet." : e?.code === "INSUFFICIENT_FUNDS" ? "Not enough ETH for this amount plus the network fee." : /slippage|Too little received|TOO_LITTLE|V4TooLittleReceived|0x8b063d73/i.test(String(e?.message || e?.data || "")) ? "The price moved more than your max slippage. Try again or raise slippage." : e?.shortMessage || e?.message || "The swap failed.";
+      status(esc(m));
+    } finally {
+      st.busy = false; render();
+    }
+  });
+
+  // ---------- controls
+  function setDir(d) {
+    st.dir = d;
+    $("t-buy").setAttribute("aria-pressed", d === "buy"); $("t-sell").setAttribute("aria-pressed", d === "sell");
+    $("pay-l").textContent = "You pay"; $("get-l").textContent = "You receive";
+    $("base-in").hidden = d !== "buy"; $("base-out").hidden = d !== "sell";
+    const tokRow = $("tok-row");
+    // In "sell" mode the token goes in the pay box.
+    if (d === "sell") $("amt").closest(".box").appendChild(tokRow); else $("out").parentElement.insertBefore(tokRow, $("out"));
+    st.routes = []; requote(); balances(); render();
+  }
+  $("t-buy").onclick = () => setDir("buy");
+  $("t-sell").onclick = () => setDir("sell");
+  const pickBase = (box) => box.querySelectorAll("button").forEach((b) => (b.onclick = () => {
+    st.base = b.dataset.a;
+    document.querySelectorAll("#base-in button, #base-out button").forEach((x) => x.setAttribute("aria-pressed", x.dataset.a === st.base));
+    requote(); balances();
+  }));
+  pickBase($("base-in")); pickBase($("base-out"));
+  $("slip").querySelectorAll("button").forEach((b) => (b.onclick = () => { st.slip = BigInt(b.dataset.s); $("slip").querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", x === b)); render(); }));
+  $("amt").addEventListener("input", () => { st.amountIn = 0n; render(); requote(); });
+  $("ack").addEventListener("change", () => render());
+  let tTimer = 0;
+  $("tok").addEventListener("input", () => { clearTimeout(tTimer); tTimer = setTimeout(() => loadToken($("tok").value), 400); });
+  $("max").onclick = async () => {
+    if (!W.account) return W.open();
+    if (st.dir === "buy") {
+      if (st.base === "ETH") { const b = await p.getBalance(W.account); const keep = ethers.parseEther("0.0005"); $("amt").value = b > keep ? ethers.formatEther(b - keep) : "0"; }
+      else $("amt").value = ethers.formatUnits(await new ethers.Contract(S.A.USDG, ["function balanceOf(address) view returns (uint256)"], p).balanceOf(W.account), 6);
+    } else if (st.token && st.meta) {
+      $("amt").value = ethers.formatUnits(await new ethers.Contract(st.token, ["function balanceOf(address) view returns (uint256)"], p).balanceOf(W.account), st.meta.dec);
+    }
+    st.amountIn = 0n; requote();
+  };
+
+  // wallet button
+  const btn = $("wallet-btn"), short = (a) => a.slice(0, 6) + "…" + a.slice(-4);
+  const renderW = () => {
+    if (W.account) { btn.innerHTML = '<span class="dot"></span>' + short(W.account); btn.classList.add("on"); }
+    else { btn.textContent = "Connect wallet"; btn.classList.remove("on"); }
+    balances(); render();
+  };
+  btn.addEventListener("click", async () => { if (W.account) await W.disconnect(); else await W.open(); renderW(); });
+  W.onChange(renderW); W.restore().then(renderW);
+
+  // ?token=0x… prefill (e.g. from a Check report)
+  const q = new URLSearchParams(location.search).get("token");
+  if (q) { $("tok").value = q; loadToken(q); }
+  render();
+})();
+</script>
+</body>
+</html>

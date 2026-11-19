@@ -1,0 +1,810 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>NEARL · The safety layer for onchain agents</title>
+<meta name="description" content="See who bundled a token before you buy it. NEARL exposes first-block bundles, launch snipers, the creator's other launches and the top holders, and simulates the buy and sell, for any token on Robinhood Chain and Pons. Free.">
+<link rel="icon" href="favicon.svg?v=1" type="image/svg+xml">
+<link rel="alternate icon" href="logo-icon.png?v=1" type="image/png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Source+Code+Pro:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="theme.css?v=7">
+<style>
+/* Concept: a security scanner. The hero is a live radar of tokens launched on Robinhood Chain in the
+   last hours; every blip can be checked. Sections below read like scan reports: what the scanner sees,
+   how an agent trade flows through NEARL, the products, and how to plug it in. */
+:root{--scan:#8FC2A9;--scan-soft:rgba(96,145,126,.18)}
+body{background-image:
+  linear-gradient(color-mix(in srgb,var(--ink) 3%,transparent) 1px,transparent 1px),
+  linear-gradient(90deg,color-mix(in srgb,var(--ink) 3%,transparent) 1px,transparent 1px),
+  radial-gradient(900px 520px at 78% 8%,color-mix(in srgb,var(--accent) 12%,transparent),transparent 70%);
+  background-size:48px 48px,48px 48px,auto}
+
+/* ---- 3D scanner tunnel (tunnel.js). Canvas is fixed behind everything; content scrolls over it. */
+#tunnel{position:fixed;inset:0;width:100%;height:100%;z-index:0;pointer-events:none;display:block;opacity:.7}
+.has-tunnel body{background-image:radial-gradient(70% 60% at 50% 45%,#121826 0%,var(--paper) 70%)}
+.topnav,main,#site-footer{position:relative;z-index:1}
+.has-tunnel .cell,.has-tunnel .prod,.has-tunnel .ledger,.has-tunnel pre.code,.has-tunnel .strip,.has-tunnel .scanbar{
+  background:color-mix(in srgb,var(--surface) 92%,transparent);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
+.has-tunnel .strip{border:1px solid var(--rule);border-radius:16px}
+.has-tunnel .final{background:radial-gradient(60% 120% at 50% 0%,var(--scan-soft),transparent 70%),color-mix(in srgb,var(--surface) 78%,transparent);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
+.scrollcue{display:inline-flex;align-items:center;gap:10px;margin-top:40px;font:500 12.5px var(--f-mono);letter-spacing:.14em;text-transform:uppercase;color:var(--ink-2)}
+.nearl-ca{display:flex;align-items:center;flex-wrap:wrap;gap:6px 12px;margin-top:22px;border:1px solid var(--rule);background:var(--surface);border-radius:12px;padding:12px 16px;font:500 13.5px var(--f-mono);color:var(--ink-2);text-decoration:none;max-width:640px}
+.nearl-ca b{color:var(--ink);font-weight:600}
+.nearl-ca i{width:8px;height:8px;border-radius:50%;background:var(--warn);font-style:normal}
+.nearl-ca.live i{background:var(--good)}
+.nearl-ca .go{margin-left:auto;color:var(--ink)}
+.nearl-ca:hover{border-color:var(--scan)}
+.scrollcue i{width:1px;height:34px;background:linear-gradient(var(--scan),transparent);animation:cue 1.8s ease-in-out infinite}
+@keyframes cue{0%{transform:scaleY(.2);transform-origin:top}50%{transform:scaleY(1);transform-origin:top}100%{transform:scaleY(.2);transform-origin:bottom}}
+/* gate index on the right edge */
+.gates{position:fixed;right:max(16px,env(safe-area-inset-right,0px));top:50%;transform:translateY(-50%);z-index:2;display:grid;gap:10px}
+.gates a{display:flex;align-items:center;justify-content:flex-end;gap:10px;text-decoration:none;color:var(--ink-2);font:500 11.5px var(--f-mono);letter-spacing:.08em;text-transform:uppercase}
+.gates a span{opacity:0;transform:translateX(6px);transition:opacity .25s,transform .25s}
+.gates a i{width:22px;height:2px;background:var(--rule);transition:width .25s,background .25s}
+.gates a:hover span,.gates a.on span{opacity:1;transform:none}
+.gates a.on{color:var(--scan)}
+.gates a.on i{width:40px;background:var(--scan)}
+@media (max-width:900px){.gates{display:none}}
+.fresh{display:grid;grid-template-columns:1.2fr .8fr;gap:32px;align-items:center}
+@media (max-width:980px){.fresh{grid-template-columns:1fr}}
+.fresh > *{min-width:0}
+.sec{padding-block:88px 0}
+.kicker{display:inline-flex;align-items:center;gap:8px;font:500 12.5px var(--f-mono);letter-spacing:.1em;text-transform:uppercase;color:var(--scan)}
+.kicker::before{content:"";width:18px;height:1px;background:currentColor}
+.h2{font-size:clamp(32px,4.6vw,56px);font-weight:800;line-height:1.02;margin-top:12px;max-width:16em}
+.lead{color:var(--ink-2);font-size:18px;margin-top:14px;max-width:44em}
+
+/* ---- hero ---- */
+.hero{display:grid;grid-template-columns:minmax(0,1.08fr) minmax(0,.92fr);gap:32px;align-items:center;min-height:calc(100svh - 72px);padding-block:40px 32px}
+.hero-text{min-width:0}
+.hero .scanbar{width:100%}
+@media (max-width:900px){.hero{grid-template-columns:minmax(0,1fr);gap:8px;min-height:0;padding-top:36px}}
+/* live pill above the headline */
+.pill{display:inline-flex;align-items:center;gap:8px;flex-wrap:wrap;font:500 14px var(--f-body);color:var(--ink-2)}
+.pill .dot{box-shadow:0 0 0 4px var(--good-soft)}
+.pill b{display:inline-flex;align-items:center;gap:6px;color:var(--ink);font-weight:600;border:1px solid var(--rule);border-radius:999px;padding:4px 11px;background:color-mix(in srgb,var(--surface) 85%,transparent)}
+.pill b .logo{height:12px}
+/* hero headline: one statement, not stacked short lines */
+.hero h1 .hl{color:var(--accent)}
+/* scanner label above the headline */
+.scantag{display:inline-flex;align-items:center;gap:10px;font:500 13px var(--f-mono);color:var(--ink-2);letter-spacing:.04em}
+.scantag .pulse{position:relative;width:10px;height:10px;border-radius:50%;background:var(--scan)}
+.scantag .pulse::after{content:"";position:absolute;inset:-6px;border-radius:50%;border:1px solid var(--scan);animation:pulse 2.4s ease-out infinite}
+@keyframes pulse{0%{transform:scale(.4);opacity:.9}100%{transform:scale(1.6);opacity:0}}
+.scantag b{color:var(--ink);font-weight:500}
+/* 3D scan-report stack (hero-report.js) */
+.report3d{position:relative;width:100%;max-width:520px;aspect-ratio:1/1.02;justify-self:center;perspective:1300px;cursor:grab;touch-action:pan-y;user-select:none;outline:none}
+.report3d.grabbing{cursor:grabbing}
+.report3d:focus-visible .sheet.front{outline:2px solid var(--accent);outline-offset:4px}
+.report3d .stack{position:absolute;inset:6% 4% 12%;transform-style:preserve-3d;transform:rotateX(-8deg) rotateY(-18deg)}
+.sheet{position:absolute;inset:0;border-radius:20px;padding:22px 24px;display:flex;flex-direction:column;gap:14px;overflow:hidden;
+  background:linear-gradient(160deg,#10201a,#0a1510 70%);border:1px solid color-mix(in srgb,var(--scan) 26%,var(--rule));
+  box-shadow:0 30px 60px -28px rgba(0,0,0,.8),0 0 0 1px rgba(0,0,0,.4);
+  transform:translate3d(calc(var(--pos) * var(--off,26px)),calc(var(--pos) * var(--off,26px) * -.85),calc(var(--pos) * -70px));
+  opacity:calc(1 - var(--pos) * .22);transition:transform .6s cubic-bezier(.2,.8,.2,1),opacity .6s ease}
+.sheet.leaving{transform:translate3d(-40px,60px,90px) rotateZ(-6deg);opacity:0}
+.sheet .top{display:flex;justify-content:space-between;align-items:center;font:500 12px var(--f-mono);letter-spacing:.12em;text-transform:uppercase;color:var(--ink-2)}
+.sheet .top b{color:var(--scan);font-weight:500}
+.sheet h3{font-size:24px;font-weight:600;letter-spacing:-.01em}
+.sheet .tk{font:500 13px var(--f-mono);color:var(--ink-2)}
+.sheet .bars{display:grid;gap:12px;margin-top:4px}
+.sheet .bar{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px 10px;font-size:14px;align-items:center}
+.sheet .bar span{color:var(--ink-2)}.sheet .bar b{font:600 15px var(--f-mono)}
+.sheet .bar i{grid-column:1/-1;height:6px;border-radius:3px;background:rgba(255,255,255,.08);overflow:hidden;display:block}
+.sheet .bar i u{display:block;height:100%;border-radius:3px;background:var(--warn)}
+.sheet .bar i u.bad{background:var(--bad)}.sheet .bar i u.ok{background:var(--good)}.sheet .bar i u.dim{background:var(--ink-2)}
+.sheet .foot{margin-top:auto;font:500 11.5px var(--f-mono);color:var(--ink-2);line-height:1.5}
+.sheet .rows{display:grid;gap:8px;margin-top:2px}
+.sheet .rows div{display:flex;justify-content:space-between;gap:10px;border:1px solid var(--rule);border-radius:10px;padding:9px 12px;font-size:14px}
+.sheet .rows .g{color:var(--good)}.sheet .rows .w{color:var(--warn)}
+/* a slow scan line across the front sheet */
+.sheet.front::after{content:"";position:absolute;left:0;right:0;top:-30%;height:30%;pointer-events:none;
+  background:linear-gradient(to bottom,transparent,color-mix(in srgb,var(--scan) 16%,transparent) 70%,color-mix(in srgb,var(--scan) 55%,transparent) 99%,transparent);
+  animation:scanline 5.5s cubic-bezier(.45,0,.55,1) infinite}
+@keyframes scanline{0%{top:-30%}60%,100%{top:105%}}
+.report3d .dots{position:absolute;left:50%;bottom:3%;transform:translateX(-50%);display:flex;gap:7px;align-items:center;font:500 12px var(--f-mono);color:var(--ink-2)}
+.report3d .dots i{width:7px;height:7px;border-radius:50%;background:var(--rule)}
+.report3d .dots i.on{background:var(--scan)}
+.report3d .dots span{margin-left:8px}
+@media (prefers-reduced-motion:reduce){.sheet.front::after,.scantag .pulse::after{animation:none}}
+@media (max-width:900px){.report3d{max-width:360px;aspect-ratio:1/1.8;--off:12px}.report3d .stack{inset:4% 6% 12% 2%}.sheet{padding:16px 16px;gap:7px;border-radius:16px}.sheet h3{font-size:20px}.sheet .bar{font-size:13px}.sheet .bars{gap:9px}.sheet .rows div{font-size:13px;padding:8px 10px}.sheet .top{font-size:11px;letter-spacing:.08em}}
+.hero h1{font-size:clamp(40px,5vw,68px);line-height:1.02;font-weight:800;margin-top:18px;max-width:12.5em}
+/* One word at a time: fade out, swap the text, fade in (no stacked words that can peek through). */
+.cycle{display:inline-block;color:var(--accent);transition:opacity .35s ease,transform .35s ease}
+.cycle.out{opacity:0;transform:translateY(.12em)}
+.hero .sub{color:var(--ink-2);font-size:clamp(17px,1.6vw,20px);margin-top:22px;max-width:32em}
+.scanbar{margin-top:28px;display:flex;gap:8px;background:var(--surface);border:1px solid var(--rule);border-radius:14px;padding:8px;max-width:600px}
+.scanbar input{flex:1;min-width:0;border:0;background:transparent;color:var(--ink);font:15px var(--f-mono);padding:10px 12px}
+.scanbar input:focus{outline:none}
+.scanbar:focus-within{border-color:var(--scan)}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px;font:500 13px var(--f-mono);color:var(--ink-2);align-items:center}
+.chips a{border:1px solid var(--rule);border-radius:999px;padding:4px 10px;text-decoration:none;color:var(--ink)}
+.chips a:hover{border-color:var(--scan);color:var(--scan)}
+
+.radar{position:relative;aspect-ratio:1/1;width:100%;max-width:560px;justify-self:center}
+.radar canvas{width:100%;height:100%;display:block;cursor:crosshair}
+.radar .hud{position:absolute;inset:auto 0 0 0;display:flex;justify-content:space-between;font:500 12px var(--f-mono);color:var(--ink-2);pointer-events:none}
+.radar .hud b{color:var(--scan);font-weight:500}
+.radar .tip{position:absolute;pointer-events:none;background:var(--surface);border:1px solid var(--rule);border-radius:10px;padding:8px 10px;font:500 12.5px var(--f-mono);white-space:nowrap;transform:translate(-50%,-130%);opacity:0;transition:opacity .15s}
+
+/* ---- live strip ---- */
+.strip{margin-top:28px;border-block:1px solid var(--rule);display:grid;grid-template-columns:repeat(4,1fr)}
+@media (max-width:760px){.strip{grid-template-columns:1fr 1fr}}
+.strip div{padding:20px 18px;border-right:1px solid var(--rule)}
+.strip div:last-child{border-right:0}
+.strip b{display:block;font:700 30px var(--f-mono);font-variant-numeric:tabular-nums}
+.strip span{font:500 12px var(--f-mono);letter-spacing:.08em;text-transform:uppercase;color:var(--ink-2)}
+
+/* ---- fresh launches marquee ---- */
+.marq{margin-top:28px;overflow:hidden;mask-image:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent)}
+.marq .track{display:flex;gap:10px;width:max-content;animation:marq 110s linear infinite}
+.marq:hover .track{animation-play-state:paused}
+@keyframes marq{to{transform:translateX(-50%)}}
+.tok{display:inline-flex;align-items:center;gap:10px;border:1px solid var(--rule);background:var(--surface);border-radius:999px;padding:8px 14px 8px 8px;text-decoration:none;color:var(--ink);font:500 14px var(--f-mono)}
+.tok i{width:26px;height:26px;border-radius:50%;display:grid;place-items:center;font:700 11px var(--f-mono);color:var(--paper);font-style:normal}
+.tok small{color:var(--ink-2)}
+.tok:hover{border-color:var(--scan)}
+.tok .flag{font-style:normal;font-size:12px;border-radius:999px;padding:2px 8px;background:var(--surface);color:var(--ink-2);border:1px solid var(--rule)}
+.tok .flag.bad{color:var(--bad);background:var(--bad-soft);border-color:transparent}
+.tok .flag.warn{color:var(--warn);background:var(--warn-soft);border-color:transparent}
+.radar-note{margin:14px 0 0;font-size:13.5px;color:var(--ink-2);max-width:62ch}
+.radar-note b{color:var(--ink)}
+
+/* ---- scanner bento ---- */
+.bento{display:grid;grid-template-columns:repeat(6,1fr);gap:14px;margin-top:36px}
+.cell{background:var(--surface);border:1px solid var(--rule);border-radius:18px;padding:22px;display:grid;gap:10px;align-content:start;min-width:0;overflow:hidden}
+.cell h3{font-size:21px;font-weight:700}
+.cell p{color:var(--ink-2);font-size:15px}
+.c3{grid-column:span 3}.c2{grid-column:span 2}.c4{grid-column:span 4}
+@media (max-width:900px){.c3,.c2,.c4{grid-column:span 6}}
+.viz{height:150px;border-radius:12px;background:var(--paper);border:1px solid var(--rule);position:relative;overflow:hidden}
+.flow{display:flex;align-items:center;justify-content:center;gap:10px;height:100%;font:500 13px var(--f-mono)}
+.flow span{border:1px solid var(--rule);border-radius:8px;padding:6px 10px}
+.flow .x{color:var(--bad);border-color:var(--bad)}
+.flow .ok{color:var(--good);border-color:var(--good)}
+.flow em{font-style:normal;color:var(--ink-2)}
+.meter{position:absolute;inset:auto 18px 26px 18px;height:10px;border-radius:5px;background:linear-gradient(90deg,var(--good),var(--warn) 35%,var(--bad))}
+.meter i{position:absolute;top:-8px;width:3px;height:26px;background:var(--ink);border-radius:2px;left:12%;animation:needle 14s ease-in-out infinite}
+@keyframes needle{0%,100%{left:12%}50%{left:78%}}
+.viz .lbl{position:absolute;left:18px;right:18px;top:24px;display:flex;justify-content:space-between;font:500 12px var(--f-mono);color:var(--ink-2)}
+.powers{display:flex;flex-wrap:wrap;gap:8px;padding:18px;align-content:center;height:100%}
+.powers span{font:500 12.5px var(--f-mono);border-radius:8px;padding:6px 10px;border:1px solid var(--rule)}
+.powers .on{color:var(--bad);border-color:color-mix(in srgb,var(--bad) 50%,transparent)}
+.powers .off{color:var(--ink-2);text-decoration:line-through}
+.pools{display:grid;grid-template-columns:repeat(3,1fr);height:100%}
+.pools div{display:grid;place-items:center;align-content:center;gap:4px;border-right:1px solid var(--rule);font:500 12px var(--f-mono);color:var(--ink-2)}
+.pools div:last-child{border-right:0}
+.pools b{font:700 22px var(--f-display);color:var(--ink)}
+.bars{display:flex;align-items:flex-end;gap:6px;height:100%;padding:18px}
+.bars i{flex:1;background:var(--scan-soft);border-top:2px solid var(--scan);border-radius:4px 4px 0 0}
+
+/* ---- bundles & snipers card ---- */
+.bund{display:grid;gap:8px;padding:16px 18px;height:100%;align-content:center;font:500 12.5px var(--f-mono)}
+.bund .r{display:grid;grid-template-columns:minmax(0,1fr) 54px;gap:10px;align-items:center}
+.bund .r span{color:var(--ink-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bund .r b{text-align:right;color:var(--ink);font-weight:600}
+.bund .r i{grid-column:1/-1;height:5px;border-radius:3px;background:var(--rule);overflow:hidden;display:block}
+.bund .r i u{display:block;height:100%;background:var(--warn)}
+.bund .r i u.bad{background:var(--bad)}
+.bund small{color:var(--ink-2);font-size:11px}
+@media (max-width:600px){.bund .r span{white-space:normal}}
+.hist{display:grid;gap:6px;padding:16px 18px;height:100%;align-content:center;font:500 12.5px var(--f-mono)}
+.hist div{display:flex;justify-content:space-between;gap:10px;border:1px solid var(--rule);border-radius:8px;padding:6px 10px}
+.hist .x{color:var(--bad)}.hist .g{color:var(--good)}
+.viz.tall{height:190px}
+
+/* ---- agent flow ---- */
+.steps{margin-top:36px;display:grid;grid-template-columns:repeat(5,1fr);gap:0;position:relative}
+@media (max-width:900px){.steps{grid-template-columns:1fr}}
+.steps::before{content:"";position:absolute;left:0;right:0;top:22px;height:1px;background:linear-gradient(90deg,var(--scan),var(--accent));opacity:.5}
+@media (max-width:900px){.steps::before{display:none}}
+.step{padding:0 16px 0 0;display:grid;gap:8px;align-content:start}
+@media (max-width:900px){.step{padding:0 0 22px 0}}
+.step .n{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;background:var(--paper);border:1px solid var(--scan);color:var(--scan);font:600 14px var(--f-mono);position:relative}
+.step h3{font-size:18px;font-weight:700;margin-top:6px}
+.step p{color:var(--ink-2);font-size:14.5px}
+.step code{font:12.5px var(--f-mono);color:var(--ink)}
+
+/* ---- products ---- */
+.prods{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:36px}
+@media (max-width:900px){.prods{grid-template-columns:1fr}}
+.prod{background:var(--surface);border:1px solid var(--rule);border-radius:18px;padding:24px;display:grid;gap:12px;align-content:start}
+.prod h3{font-size:26px;font-weight:800}
+.prod ul{margin:0;padding:0;list-style:none;display:grid;gap:8px;color:var(--ink-2);font-size:15px}
+.prod li::before{content:"✓  ";color:var(--scan)}
+.prod .btn{justify-self:start;margin-top:6px}
+
+/* ---- plug in ---- */
+.plug{display:grid;grid-template-columns:.9fr 1.1fr;gap:28px;margin-top:36px;align-items:start}
+@media (max-width:900px){.plug{grid-template-columns:1fr}}
+.plug > *{min-width:0} /* let long code lines scroll inside the box instead of widening the page */
+.tabs{display:flex;gap:6px;flex-wrap:wrap}
+.tabs button{font:500 13px var(--f-mono);border:1px solid var(--rule);background:transparent;color:var(--ink-2);padding:8px 14px;border-radius:8px;cursor:pointer}
+.tabs button[aria-selected="true"]{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+pre.code{margin:12px 0 0;background:var(--surface);border:1px solid var(--rule);border-radius:14px;padding:18px;overflow-x:auto;font:13px/1.65 var(--f-mono);color:var(--ink);min-height:200px}
+pre.code .c{color:var(--ink-2)}pre.code .k{color:var(--scan)}
+
+/* ---- audience ---- */
+.who{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:36px}
+@media (max-width:900px){.who{grid-template-columns:1fr 1fr}}
+@media (max-width:520px){.who{grid-template-columns:1fr}}
+.who div{border-top:2px solid var(--scan);padding-top:14px;display:grid;gap:6px}
+.who h3{font-size:18px;font-weight:700}
+.who p{color:var(--ink-2);font-size:14.5px}
+
+/* ---- ledger + final ---- */
+.ledger{margin-top:28px;background:var(--surface);border:1px solid var(--rule);border-radius:16px;overflow:hidden}
+.ledger .row{display:grid;grid-template-columns:110px 1fr auto;gap:16px;padding:12px 18px;border-bottom:1px solid var(--rule);font-size:14px;align-items:center}
+.ledger .row:last-child{border-bottom:0}
+.ledger .t{font:500 12.5px var(--f-mono);color:var(--ink-2)}
+.ledger a{font:500 12.5px var(--f-mono);color:var(--ink-2);text-decoration:none}
+@media (max-width:560px){.ledger .row{grid-template-columns:1fr auto}.ledger .t{grid-column:1/-1}}
+.final{margin-top:96px;border:1px solid var(--rule);border-radius:24px;padding:56px 28px;text-align:center;display:grid;gap:16px;justify-items:center;
+  background:radial-gradient(60% 120% at 50% 0%,var(--scan-soft),transparent 70%),var(--surface)}
+.final h2{font-size:clamp(32px,4.8vw,58px);font-weight:800;line-height:1}
+@media (prefers-reduced-motion:reduce){.marq .track,.meter i{animation:none}.cycle{transition:none}}
+
+/* ---- slides (slides.js): every section is a fenced panel; text rises in as it scrolls into view ---- */
+.slide{position:relative;margin:22px 0;padding:80px clamp(20px,4.5vw,64px) 64px!important;border:1px solid var(--rule);border-radius:28px;
+  background:color-mix(in srgb,var(--paper) 80%,transparent);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);
+  transition:border-color .9s ease,box-shadow .9s ease}
+@media (min-width:901px){
+  .slide{min-height:calc(100svh - 120px);display:flex;flex-direction:column;justify-content:center}
+  .hero.slide{display:grid;align-content:center}
+}
+.slide.in{border-color:color-mix(in srgb,var(--scan) 32%,var(--rule));box-shadow:0 40px 90px -50px rgba(143,194,169,.28)}
+.slide-tag{position:absolute;left:clamp(20px,4.5vw,64px);right:clamp(20px,4.5vw,64px);top:26px;display:flex;justify-content:space-between;gap:12px;
+  font:500 12px var(--f-mono);letter-spacing:.14em;text-transform:uppercase;color:var(--ink-2);pointer-events:none}
+.slide-tag span:first-child{color:var(--scan)}
+.slide .corner{position:absolute;width:26px;height:26px;border:0 solid var(--scan);pointer-events:none;opacity:1}
+.slide .corner.tl{left:-1px;top:-1px;border-left-width:2px;border-top-width:2px;border-top-left-radius:28px}
+.slide .corner.tr{right:-1px;top:-1px;border-right-width:2px;border-top-width:2px;border-top-right-radius:28px}
+.slide .corner.bl{left:-1px;bottom:-1px;border-left-width:2px;border-bottom-width:2px;border-bottom-left-radius:28px}
+.slide .corner.br{right:-1px;bottom:-1px;border-right-width:2px;border-bottom-width:2px;border-bottom-right-radius:28px}
+/* motion (only when slides.js runs and motion is allowed) */
+.slides-anim .slide .corner{opacity:0;transition:opacity .7s ease .15s,transform .7s cubic-bezier(.2,.8,.2,1) .15s}
+.slides-anim .slide .corner.tl{transform:translate(10px,10px)}.slides-anim .slide .corner.tr{transform:translate(-10px,10px)}
+.slides-anim .slide .corner.bl{transform:translate(10px,-10px)}.slides-anim .slide .corner.br{transform:translate(-10px,-10px)}
+.slides-anim .slide.in .corner{opacity:1;transform:none}
+.slides-anim .slide-tag{opacity:0;transform:translateY(-6px);transition:opacity .7s ease,transform .7s ease}
+.slides-anim .slide.in .slide-tag{opacity:1;transform:none}
+.slides-anim .split .w{display:inline-block;overflow:hidden;vertical-align:top;padding-bottom:.1em;margin-bottom:-.1em}
+.slides-anim .split .w > span{display:inline-block;transform:translateY(108%);opacity:0;
+  transition:transform 1s cubic-bezier(.2,.8,.2,1),opacity 1s ease;transition-delay:calc(var(--i) * 45ms + 120ms)}
+.slides-anim .slide.in .split .w > span{transform:none;opacity:1}
+.slides-anim .rise{opacity:0;transform:translateY(24px);filter:blur(5px);
+  transition:opacity .9s ease,transform .9s cubic-bezier(.2,.8,.2,1),filter .9s ease;transition-delay:var(--d,0ms)}
+.slides-anim .slide.in .rise{opacity:1;transform:none;filter:none}
+/* the right-hand section index would cross the slide frame on laptop screens: show only its lines there */
+@media (max-width:1440px){.gates a span{display:none}}
+@media (prefers-reduced-motion:reduce){.slides-anim .rise,.slides-anim .split .w > span,.slides-anim .slide .corner,.slides-anim .slide-tag{transition:none}}
+</style>
+</head>
+<body>
+<canvas id="tunnel" aria-hidden="true"></canvas>
+<nav class="gates" aria-label="Tunnel sections">
+  <a href="#enter"><span>Enter</span><i></i></a>
+  <a href="#fresh"><span>I · Fresh</span><i></i></a>
+  <a href="#scan-gate"><span>II · Scan</span><i></i></a>
+  <a href="#agent"><span>III · Agent</span><i></i></a>
+  <a href="#guard-gate"><span>IV · Guard</span><i></i></a>
+  <a href="#build"><span>V · Build</span><i></i></a>
+  <a href="#ledger-gate"><span>VI · Ledger</span><i></i></a>
+</nav>
+<nav class="topnav">
+  <div class="in">
+    <a class="brand" href="index.html"><span class="logo" aria-hidden="true"></span>NEARL</a>
+    <div class="links"><a href="token.html">$NEARL</a><a href="check.html">Check</a><a href="swap.html">Swap</a><a href="guard.html">Guard</a><a href="app.html">Earn</a><a href="docs.html">Docs</a></div>
+    <button class="btn sm" type="button" id="wallet-btn">Connect wallet</button>
+    <a class="btn primary sm" href="check.html">Launch</a>
+  </div>
+</nav>
+
+<main class="wrap">
+  <!-- HERO -->
+  <header class="hero" id="enter" data-gate="Enter">
+    <div class="hero-text">
+    <p class="scantag"><span class="pulse" aria-hidden="true"></span>Token scanner for <b>Robinhood Chain</b> &amp; <b>Pons</b></p>
+    <h1>See who bundled it <span class="hl">before you buy.</span></h1>
+    <p class="sub">Paste any token. NEARL shows first-block bundles, launch snipers, the creator's other launches and the top holders, and simulates the buy and the sell, in seconds.</p>
+    <form class="scanbar" id="scan" role="search">
+      <label class="sr" for="q">Token address</label>
+      <input id="q" placeholder="Paste a token address (0x…)" spellcheck="false" autocomplete="off">
+      <button class="btn primary" type="submit">Scan</button>
+    </form>
+    <div class="chips"><span>Try:</span><a href="check.html?token=0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168">USDG</a><a href="check.html?token=0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73">WETH</a><span id="chip-live"></span></div>
+    <a class="nearl-ca" id="nearl-ca" href="token.html"><i></i><b>$NEARL</b><span id="nearl-ca-t">Not launched yet · CA will be posted here</span><span class="go" aria-hidden="true">→</span></a>
+    <span class="scrollcue" aria-hidden="true"><i></i>Scroll to pass the gates</span>
+    </div>
+    <div class="report3d" id="report3d" tabindex="0" role="group" aria-roledescription="carousel" aria-label="Example NEARL scan report. Drag to turn it, click or press Enter for the next sheet.">
+      <div class="stack">
+        <article class="sheet">
+          <div class="top"><span>Scan report · 1 / 3</span><b>Launch</b></div>
+          <h3>Bundles &amp; snipers</h3>
+          <div class="tk">COFR · Pons launch · Robinhood Chain</div>
+          <div class="bars">
+            <div class="bar"><span>First block · 6 wallets</span><b>35%</b><i><u style="width:35%"></u></i></div>
+            <div class="bar"><span>First 10 seconds · 70 wallets</span><b>79%</b><i><u class="bad" style="width:79%"></u></i></div>
+            <div class="bar"><span>Early buyers still hold</span><b>14%</b><i><u style="width:14%"></u></i></div>
+            <div class="bar"><span>Bundle wallets named by creator</span><b>2</b><i><u style="width:8%"></u></i></div>
+          </div>
+          <p class="foot">Real data from a Pons launch, checked 19 Nov 2026.</p>
+        </article>
+        <article class="sheet">
+          <div class="top"><span>Scan report · 2 / 3</span><b>Holders</b></div>
+          <h3>Top holders</h3>
+          <div class="tk">117 holders · top 10 hold 30.1%</div>
+          <div class="bars">
+            <div class="bar"><span>Uniswap v4 pool</span><b>29.9%</b><i><u class="dim" style="width:30%"></u></i></div>
+            <div class="bar"><span>Burned</span><b>9.0%</b><i><u class="dim" style="width:9%"></u></i></div>
+            <div class="bar"><span>0x2674…4952</span><b>8.2%</b><i><u class="ok" style="width:8%"></u></i></div>
+            <div class="bar"><span>Creator</span><b>0.6%</b><i><u class="ok" style="width:2%"></u></i></div>
+          </div>
+          <p class="foot">Same launch. Labels for the curve, pools, burns and the creator.</p>
+        </article>
+        <article class="sheet">
+          <div class="top"><span>Scan report · 3 / 3</span><b>Trade test</b></div>
+          <h3>Simulated trades</h3>
+          <div class="tk">Bought, sold and sent on a copy of the chain</div>
+          <div class="rows">
+            <div><span>Buy</span><b class="g">works · 0% tax</b></div>
+            <div><span>Sell</span><b class="g">works · 0% tax</b></div>
+            <div><span>Transfer</span><b class="g">works</b></div>
+            <div><span>Pool</span><b class="w">Uniswap v4 · with a hook</b></div>
+          </div>
+          <p class="foot">No wallet, nothing sent. Same launch.</p>
+        </article>
+      </div>
+      <div class="dots" aria-hidden="true"><i></i><i></i><i></i><span>drag · tap for next</span></div>
+    </div>
+  </header>
+
+  <!-- LIVE STRIP -->
+  <div class="strip" aria-label="Live numbers">
+    <div><b id="s-new">—</b><span id="s-new-l">New Uniswap v4 pools</span></div>
+    <div><b id="s-guards">—</b><span>Guard wallets (testnet)</span></div>
+    <div><b id="s-guards-main">—</b><span>Guard wallets (mainnet)</span></div>
+    <div><b>Bundles</b><span>Snipers &amp; top holders, from every transfer</span></div>
+  </div>
+
+  <!-- FRESH LAUNCHES -->
+  <section class="sec" style="padding-top:64px" id="fresh" data-gate="Fresh">
+    <div class="fresh">
+      <div>
+        <span class="kicker">Gate I · Fresh off the chain</span>
+        <h2 class="h2">New pools, minutes old. Check them before anyone shills them.</h2>
+        <p class="lead">Every blip is a token with a new Uniswap v4 pool in the last hours. NEARL runs a quick check on each one and marks the red flags it finds. Click one for the full scan: who bundled it, who holds it, and whether you can sell it.</p>
+        <p class="radar-note"><b>Not a recommendation.</b> Showing up here only means a new pool was opened. Most brand-new tokens are high risk, and a token with no red flags in the quick check can still go to zero. The quick check skips holder analysis; open the full scan before you buy anything.</p>
+      </div>
+      <figure class="radar" style="margin:0">
+        <canvas id="radar" aria-label="Radar of tokens recently launched on Robinhood Chain. Click a dot to check that token."></canvas>
+        <div class="tip" id="tip"></div>
+        <div class="hud"><span>NEW POOLS · <b id="hud-n">scanning…</b></span><span><b style="color:var(--bad)">●</b> red flags · click to check</span></div>
+      </figure>
+    </div>
+    <div class="marq" aria-label="Recently launched tokens"><div class="track" id="marq"><span class="tok" style="opacity:.6">Loading new launches…</span></div></div>
+  </section>
+
+  <!-- SCANNER BENTO -->
+  <section class="sec" id="scan-gate" data-gate="Scan">
+    <span class="kicker">Gate II · What the scanner sees</span>
+    <h2 class="h2">Who bundled it. Who holds it. Can you sell it.</h2>
+    <div class="bento">
+      <div class="cell c4">
+        <div class="viz tall"><div class="bund" aria-label="Example from a real Pons launch">
+          <div class="r"><span>First block · 6 wallets</span><b>35%</b><i><u style="width:35%"></u></i></div>
+          <div class="r"><span>First 10 seconds · 70 wallets</span><b>79%</b><i><u class="bad" style="width:79%"></u></i></div>
+          <div class="r"><span>Early buyers still hold</span><b>14%</b><i><u style="width:14%"></u></i></div>
+          <div class="r"><span>Bundle wallets named by creator</span><b>2</b><i><u style="width:8%"></u></i></div>
+          <small>Example from a real Pons launch, read from the chain</small>
+        </div></div>
+        <h3>Bundles &amp; snipers</h3><p>Wallets that bought in the first block and the first seconds, how much they still hold, and the bundle wallets a Pons creator set up to skip the launch tax. Rebuilt from every transfer, not from a third-party API.</p>
+      </div>
+      <div class="cell c2">
+        <div class="viz tall"><div class="hist">
+          <div><span>Other launches</span><b>23</b></div>
+          <div><span>Graduated</span><b class="g">0</b></div>
+          <div><span>Died empty</span><b class="x">21</b></div>
+          <small style="color:var(--ink-2);font-size:11px">Illustration of a serial launcher</small>
+        </div></div>
+        <h3>Creator history</h3><p>Every other token the creator launched on Pons, and how they ended. Serial launchers get flagged.</p>
+      </div>
+      <div class="cell c6" style="grid-column:span 6">
+        <div class="viz" style="height:auto"><div class="bund" style="padding:14px 18px">
+          <div class="r"><span>Uniswap v4 pool</span><b>29.9%</b><i><u style="width:30%;background:var(--ink-2)"></u></i></div>
+          <div class="r"><span>0x2674…4952</span><b>8.2%</b><i><u style="width:8%;background:var(--accent)"></u></i></div>
+          <div class="r"><span>0xAc31…AD75</span><b>3.0%</b><i><u style="width:3%;background:var(--accent)"></u></i></div>
+          <small>Same Pons launch, read from the chain</small>
+        </div></div>
+        <h3>Top holders</h3><p>The ten biggest wallets, labelled (launch curve, Uniswap pool, burned, creator), the number of holders and how much the top ten control.</p>
+      </div>
+      <div class="cell c3">
+        <div class="viz"><div class="flow"><span class="ok">BUY</span><em>→</em><span>wallet</span><em>→</em><span class="x">SELL ✕</span></div></div>
+        <h3>Honeypot test</h3><p>We simulate a real buy and sell through the token's own pool and hook. If you can't sell, we say so.</p>
+      </div>
+      <div class="cell c3">
+        <div class="viz"><div class="lbl"><span>0%</span><span>tax</span><span>50%</span></div><div class="meter"><i></i></div></div>
+        <h3>Hidden taxes</h3><p>Tokens sent vs. tokens received on buy, sell and transfer. Anything taken shows up as a percent.</p>
+      </div>
+      <div class="cell c2">
+        <div class="viz"><div class="powers"><span class="on">mint()</span><span class="on">blacklist()</span><span class="off">setTax()</span><span class="off">pause()</span><span class="on">upgradeTo()</span></div></div>
+        <h3>Owner powers</h3><p>Read from the bytecode, not from the website.</p>
+      </div>
+      <div class="cell c2">
+        <div class="viz"><div class="pools"><div><b>v3</b>Uniswap</div><div><b>v4</b>hooks</div><div><b>Pons</b>launches</div></div></div>
+        <h3>Every pool type</h3><p>Uniswap v3 and v4, including Pons launch pools.</p>
+      </div>
+      <div class="cell c2">
+        <div class="viz"><div class="bars"><i style="height:22%"></i><i style="height:38%"></i><i style="height:30%"></i><i style="height:64%"></i><i style="height:52%"></i><i style="height:86%"></i></div></div>
+        <h3>Real liquidity</h3><p>Depth in dollars, so you know if you can get out.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- AGENT FLOW -->
+  <section class="sec" id="agent" data-gate="Agent">
+    <span class="kicker">Gate III · One agent trade, end to end</span>
+    <h2 class="h2">From "buy this" to a signed, logged trade.</h2>
+    <div class="steps">
+      <div class="step"><span class="n">01</span><h3>Agent wants a token</h3><p>Your agent decides to buy, from a chat, a bot or a strategy.</p></div>
+      <div class="step"><span class="n">02</span><h3>NEARL checks it</h3><p>The agent calls <code>nearl_check_token</code>. Under 55 means skip.</p></div>
+      <div class="step"><span class="n">03</span><h3>Guard caps it</h3><p>The trade must fit the daily and per-trade limits you set.</p></div>
+      <div class="step"><span class="n">04</span><h3>Trade executes</h3><p>Exact approval for the router, reset to zero right after.</p></div>
+      <div class="step"><span class="n">05</span><h3>Logged onchain</h3><p>Every action is an event anyone can audit.</p></div>
+    </div>
+  </section>
+
+  <!-- PRODUCTS -->
+  <section class="sec" id="guard-gate" data-gate="Guard">
+    <span class="kicker">Gate IV · Beyond the scan</span>
+    <h2 class="h2">Guard the wallet. Plug in the scan. Earn on the side.</h2>
+    <div class="prods">
+      <article class="prod"><span class="status live">Live · mainnet</span><h3>Guard</h3>
+        <ul><li>Daily and per-trade caps</li><li>Approved recipients and routers only</li><li>Withdraw only to the owner</li><li>One-click pause</li></ul>
+        <a class="btn" href="guard.html">Create a Guard →</a></article>
+      <article class="prod"><span class="status live">Live</span><h3>Check API &amp; MCP</h3>
+        <ul><li>Same checks as the Check page</li><li>One MCP tool: nearl_check_token</li><li>Plain JSON over HTTP</li><li>20 checks per minute, free</li></ul>
+        <a class="btn" href="docs.html#api">Read the docs →</a></article>
+      <article class="prod"><span class="status live">Live · mainnet</span><h3>Earn</h3>
+        <ul><li>Rewards while price stays above the line</li><li>All rewards locked before a pool opens</li><li>Early win when price recovers</li><li>Emergency exit if checks stop</li></ul>
+        <a class="btn" href="app.html">Open pools →</a></article>
+    </div>
+  </section>
+
+  <!-- PLUG IN -->
+  <section class="sec" id="build" data-gate="Build">
+    <div class="plug">
+      <div>
+        <span class="kicker">Gate V · For builders</span>
+        <h2 class="h2">Give your agent a second opinion.</h2>
+        <p class="lead">One MCP server, one HTTP endpoint, one skill file. Your agent asks NEARL before every buy and gets a score with reasons it can read.</p>
+        <div class="chips" style="margin-top:20px"><span class="status live">API · live</span><span class="status live">MCP · live</span><a href="docs.html#api">Read the docs</a></div>
+      </div>
+      <div>
+        <div class="tabs" role="tablist" aria-label="Integration examples">
+          <button type="button" role="tab" aria-selected="true" data-tab="mcp">MCP</button>
+          <button type="button" role="tab" aria-selected="false" data-tab="http">HTTP</button>
+          <button type="button" role="tab" aria-selected="false" data-tab="skill">Skill file</button>
+        </div>
+        <pre class="code" id="code" role="tabpanel"></pre>
+      </div>
+    </div>
+  </section>
+
+  <!-- WHO -->
+  <section class="sec">
+    <span class="kicker">Who it's for</span>
+    <h2 class="h2">Built for people who don't trust a chart alone.</h2>
+    <div class="who">
+      <div><h3>Traders</h3><p>Paste a contract before you ape in and see who bundled it. Free, no wallet needed.</p></div>
+      <div><h3>Agent builders</h3><p>Add a safety check and spending caps to any trading agent.</p></div>
+      <div><h3>Teams &amp; treasuries</h3><p>Give an agent a capped wallet instead of your main keys.</p></div>
+      <div><h3>Communities</h3><p>Share a scan link in your group: bundlers, snipers and all, before a token takes off.</p></div>
+    </div>
+  </section>
+
+  <!-- LEDGER -->
+  <section class="sec" id="ledger-gate" data-gate="Ledger">
+    <span class="kicker">Gate VI · Onchain ledger</span>
+    <h2 class="h2">Nothing hidden. Every action links to the chain.</h2>
+    <div class="ledger" id="ledger"><div class="row"><span class="t">—</span><span>Reading the chain…</span><span></span></div></div>
+  </section>
+
+  <div class="final">
+    <span class="kicker">No token. No sign-up. Just the scan.</span>
+    <h2>Paste a token. Get the truth in seconds.</h2>
+    <form class="scanbar" id="scan2" role="search" style="width:100%;max-width:640px">
+      <label class="sr" for="q2">Token address</label>
+      <input id="q2" placeholder="Paste a token address (0x…)" spellcheck="false" autocomplete="off">
+      <button class="btn primary" type="submit">Scan</button>
+    </form>
+  </div>
+</main>
+
+<footer id="site-footer"></footer>
+<script src="https://cdn.jsdelivr.net/npm/ethers@6.13.4/dist/ethers.umd.min.js"></script>
+<script src="rpc.js?v=6"></script>
+<script src="logo.js?v=2"></script>
+<script src="footer.js"></script>
+<script src="wallet.js"></script>
+<script src="nearl.js?v=2"></script>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js"}}</script>
+<script type="module" src="tunnel.js?v=2"></script>
+<script src="hero-report.js?v=1"></script>
+<script src="slides.js?v=4"></script>
+<script src="probe-code.js?v=6"></script>
+<script src="v4-pools.js?v=1"></script>
+<script src="stock-tokens.js?v=1"></script>
+<script src="nearl-token.js?v=1"></script>
+<script src="check.js?v=14"></script>
+<script>
+(function () {
+  const a = String((window.NearlToken || {}).address || "").trim();
+  if (!/^0x[0-9a-fA-F]{40}$/.test(a)) return;
+  const el = document.getElementById("nearl-ca");
+  el.classList.add("live");
+  document.getElementById("nearl-ca-t").textContent = "Live on Pons · CA " + a.slice(0, 6) + "…" + a.slice(-4);
+})();
+</script>
+<script>
+document.getElementById("scan2").addEventListener("submit", (e) => {
+  e.preventDefault();
+  const v = document.getElementById("q2").value.trim();
+  location.href = "check.html" + (v ? "?token=" + encodeURIComponent(v) : "");
+});
+</script>
+<script>
+(function(){
+  "use strict";
+  const { ethers } = window;
+  const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const css = (v) => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+  const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+  const short = (a) => a.slice(0, 6) + "…" + a.slice(-4);
+
+  // The headline stays still ("Checked first."); rotating words made the page feel jumpy.
+
+  // ---------- scan bar
+  document.getElementById("scan").addEventListener("submit", (e) => {
+    e.preventDefault();
+    const v = document.getElementById("q").value.trim();
+    location.href = "check.html" + (v ? `?token=${encodeURIComponent(v)}` : "");
+  });
+
+  // ---------- radar
+  const cv = document.getElementById("radar"), ctx = cv.getContext("2d"), tip = document.getElementById("tip");
+  let blips = [], W = 0, angle = -Math.PI / 2, hover = null;
+  const hash = (s) => { let h = 2166136261; for (const c of s) h = Math.imul(h ^ c.charCodeAt(0), 16777619); return (h >>> 0) / 4294967295; };
+  function size() {
+    const r = cv.getBoundingClientRect(), dpr = Math.min(devicePixelRatio || 1, 2);
+    cv.width = r.width * dpr; cv.height = r.height * dpr; ctx.setTransform(dpr, 0, 0, dpr, 0, 0); W = r.width;
+  }
+  function place(list) {
+    blips = list.map((t, i) => {
+      const a = hash(t.addr) * Math.PI * 2, d = 0.22 + 0.7 * hash(t.addr + "r");
+      return { ...t, a, d, lit: 0 };
+    });
+  }
+  function draw() {
+    if (!W) return;
+    const c = W / 2, R = W / 2 - 18, scan = css("--scan"), rule = css("--rule"), ink2 = css("--ink-2");
+    ctx.clearRect(0, 0, W, W);
+    ctx.strokeStyle = rule; ctx.lineWidth = 1;
+    for (let k = 1; k <= 4; k++) { ctx.beginPath(); ctx.arc(c, c, (R * k) / 4, 0, Math.PI * 2); ctx.stroke(); }
+    ctx.beginPath(); ctx.moveTo(c - R, c); ctx.lineTo(c + R, c); ctx.moveTo(c, c - R); ctx.lineTo(c, c + R); ctx.stroke();
+    // sweep
+    const g = ctx.createConicGradient ? ctx.createConicGradient(angle - 0.9, c, c) : null;
+    if (g) {
+      g.addColorStop(0, "rgba(0,0,0,0)"); g.addColorStop(0.14, scan + "55"); g.addColorStop(0.145, "rgba(0,0,0,0)");
+      ctx.fillStyle = g; ctx.beginPath(); ctx.moveTo(c, c); ctx.arc(c, c, R, angle - 0.9, angle + 0.02); ctx.fill();
+    }
+    ctx.strokeStyle = scan; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(c, c); ctx.lineTo(c + R * Math.cos(angle), c + R * Math.sin(angle)); ctx.stroke();
+    // blips
+    ctx.font = "500 11px " + css("--f-mono");
+    for (const b of blips) {
+      const diff = ((angle - b.a) % (Math.PI * 2) + Math.PI * 2) % (Math.PI * 2);
+      if (diff < 0.06) b.lit = 1;
+      b.lit = Math.max(0.25, b.lit - 0.004);
+      const x = c + R * b.d * Math.cos(b.a), y = c + R * b.d * Math.sin(b.a);
+      b.x = x; b.y = y;
+      ctx.globalAlpha = b.lit;
+      const bc = b.risk === "bad" ? css("--bad") : b.risk === "warn" ? css("--warn") : scan;
+      ctx.fillStyle = b === hover ? css("--ink") : bc;
+      ctx.beginPath(); ctx.arc(x, y, b === hover ? 6 : 4, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = bc; ctx.globalAlpha = b.lit * 0.5; ctx.beginPath(); ctx.arc(x, y, 4 + 10 * (1 - b.lit), 0, Math.PI * 2); ctx.stroke();
+      ctx.globalAlpha = Math.min(1, b.lit + 0.2); ctx.fillStyle = ink2; ctx.fillText(b.sym, x + 9, y + 4);
+      ctx.globalAlpha = 1;
+    }
+    // core
+    ctx.fillStyle = scan; ctx.beginPath(); ctx.arc(c, c, 3, 0, Math.PI * 2); ctx.fill();
+  }
+  function loop() { angle += 0.006; draw(); requestAnimationFrame(loop); }
+  size(); addEventListener("resize", () => { size(); draw(); });
+  if (reduce) draw(); else requestAnimationFrame(loop);
+
+  const pick = (e) => {
+    const r = cv.getBoundingClientRect(), x = e.clientX - r.left, y = e.clientY - r.top;
+    let best = null, bd = 18;
+    for (const b of blips) { const d = Math.hypot(b.x - x, b.y - y); if (d < bd) { bd = d; best = b; } }
+    return best;
+  };
+  cv.addEventListener("mousemove", (e) => {
+    hover = pick(e);
+    if (hover) { tip.style.left = hover.x + "px"; tip.style.top = hover.y + "px"; tip.textContent = `${hover.sym} · ${hover.ago} · ${hover.flagText || "checking…"}`; tip.style.opacity = 1; }
+    else tip.style.opacity = 0;
+    if (reduce) draw();
+  });
+  cv.addEventListener("mouseleave", () => { hover = null; tip.style.opacity = 0; });
+  cv.addEventListener("click", (e) => { const b = pick(e); if (b) location.href = `check.html?token=${b.addr}`; });
+
+  // ---------- recent launches from Uniswap v4 (where Pons launches trade)
+  const PM = "0x8366a39CC670B4001A1121B8F6A443A643e40951";
+  const INIT = new ethers.Interface(["event Initialize(bytes32 indexed id, address indexed currency0, address indexed currency1, uint24 fee, int24 tickSpacing, address hooks, uint160 sqrtPriceX96, int24 tick)"]);
+  const KNOWN = new Set(["0x5fc5360d0400a0fd4f2af552add042d716f1d168", "0x0bd7d308f8e1639fab988df18a8011f41eacad73"]);
+  const colors = ["#7CF0C5", "#9AA8FF", "#F2B451", "#FF7E72", "#7FD0FF", "#E3A3FF"];
+  const ago = (s) => (s < 3600 ? Math.max(1, Math.round(s / 60)) + " min ago" : Math.round(s / 3600) + " h ago");
+
+  async function launches() {
+    const p = window.NearlRPC.provider(4663);
+    const latest = await p.getBlockNumber();
+    const logs = await window.NearlRPC.getLogsAdaptive(p, { address: PM, topics: [INIT.getEvent("Initialize").topicHash] }, latest - 300000, latest, 40);
+    const seen = new Set(), list = [];
+    for (const l of logs.reverse()) {
+      const a = INIT.parseLog(l).args;
+      const tok = a.currency0 === ethers.ZeroAddress || KNOWN.has(a.currency0.toLowerCase()) ? a.currency1 : a.currency0;
+      if (KNOWN.has(tok.toLowerCase()) || seen.has(tok)) continue;
+      seen.add(tok); list.push({ addr: tok, block: l.blockNumber });
+      if (list.length >= 16) break;
+    }
+    const now = await p.getBlock(latest);
+    try { const first = await p.getBlock(latest - 300000); window.__spanH = Math.max(1, Math.round((now.timestamp - first.timestamp) / 3600)); } catch (_) {}
+    const sym = new ethers.Interface(["function symbol() view returns (string)"]);
+    await Promise.all(list.map(async (t) => {
+      try { t.sym = sym.decodeFunctionResult("symbol", await p.call({ to: t.addr, data: sym.encodeFunctionData("symbol") }))[0].slice(0, 10); } catch (_) { t.sym = short(t.addr); }
+      try { const b = await p.getBlock(t.block); t.ts = b.timestamp; t.ago = ago(now.timestamp - b.timestamp); } catch (_) { t.ago = "recent"; }
+    }));
+    return { list, count: new Set(logs.map((l) => l.topics[1])).size, poolCount: logs.length };
+  }
+
+  // Quick check of each new token in the browser (no holder analysis, no server cost).
+  // Shows the red flags NEARL finds; it is not a safety rating.
+  // Results are remembered in this browser for 30 minutes, so a return visit shows them at once.
+  const CACHE = "nearl-radar-v1", FRESH_MS = 30 * 60 * 1000;
+  const load = () => { try { return JSON.parse(localStorage.getItem(CACHE)) || {}; } catch (_) { return {}; } };
+  const save = (c) => { try { localStorage.setItem(CACHE, JSON.stringify(c)); } catch (_) {} };
+  const cache = load();
+  cache.flags = cache.flags || {};
+  for (const [a, f] of Object.entries(cache.flags)) if (Date.now() - f.at > FRESH_MS) delete cache.flags[a];
+  const applyCached = (list) => { for (const t of list) { const f = cache.flags[t.addr.toLowerCase()]; if (f) { t.risk = f.risk; t.flagText = f.text; } } };
+
+  async function quickChecks(list, update) {
+    if (!window.NearlCheck) return;
+    const queue = list.filter((t) => !t.flagText);
+    const work = async () => {
+      for (let t; (t = queue.shift()); ) {
+        try {
+          const r = await window.NearlCheck.check("mainnet", t.addr, () => {}, { holders: false });
+          const bad = r.findings.filter((f) => f.level === "bad").length;
+          const warn = r.findings.filter((f) => f.level === "warn").length;
+          t.risk = bad ? "bad" : warn ? "warn" : "";
+          t.flagText = bad ? `${bad} red flag${bad > 1 ? "s" : ""}` : warn ? `${warn} warning${warn > 1 ? "s" : ""}` : "no red flags in quick check";
+          cache.flags[t.addr.toLowerCase()] = { risk: t.risk, text: t.flagText, at: Date.now() };
+          save(cache);
+        } catch (_) { t.flagText = "could not check"; }
+        update();
+      }
+    };
+    await Promise.all([work(), work(), work(), work()]); // four at a time
+  }
+
+  let shown = null;
+  function showRadar(list) {
+    shown = list;
+    applyCached(list);
+    place(list);
+    document.getElementById("hud-n").textContent = `${list.length} tokens`;
+    if (list[0]) document.getElementById("chip-live").innerHTML = `newest: <a href="check.html?token=${list[0].addr}">${esc(list[0].sym)}</a>`;
+    const render = () => {
+      if (shown !== list) return;
+      const items = list.map((t, i) => `<a class="tok" href="check.html?token=${t.addr}"><i style="background:${colors[i % colors.length]}">${esc(t.sym.slice(0, 2).toUpperCase())}</i>${esc(t.sym)} <small>${esc(t.ago)}</small> <em class="flag ${t.risk || ""}">${esc(t.flagText || "checking…")}</em></a>`).join("");
+      document.getElementById("marq").innerHTML = items + items;
+    };
+    render();
+    return () => { if (shown !== list) return; place(list); render(); if (reduce) draw(); };
+  }
+
+  // Show the last list from this browser right away, then replace it with the live one.
+  if (cache.list && Date.now() - cache.listAt < FRESH_MS) {
+    const nowS = Date.now() / 1000;
+    showRadar(cache.list.map((t) => ({ ...t, ago: t.ts ? ago(Math.max(60, nowS - t.ts)) : t.ago })));
+  }
+
+  launches().then(({ list, poolCount }) => {
+    document.getElementById("s-new").textContent = poolCount.toLocaleString("en-US");
+    if (window.__spanH) document.getElementById("s-new-l").textContent = `New v4 pools, last ${window.__spanH} h`;
+    cache.list = list.map(({ addr, sym, ts, ago }) => ({ addr, sym, ts, ago }));
+    cache.listAt = Date.now();
+    save(cache);
+    const update = showRadar(list);
+    quickChecks(list, update);
+  }).catch(() => {
+    if (shown) return; // keep the remembered list
+    document.getElementById("hud-n").textContent = "offline";
+    document.getElementById("marq").innerHTML = '<span class="tok">Could not reach Robinhood Chain right now. Paste any token above to check it.</span>';
+  });
+
+  // ---------- testnet numbers
+  (async () => {
+    try {
+      const dep = await Nearl.deployment("testnet"), p = Nearl.provider("testnet");
+      const f = new ethers.Contract(dep.guardFactory, ["function guardCount() view returns (uint256)"], p);
+      document.getElementById("s-guards").textContent = (await f.guardCount()).toString();
+      const mdep = await Nearl.deployment("mainnet");
+      if (mdep && mdep.guardFactory) {
+        const mf = new ethers.Contract(mdep.guardFactory, ["function guardCount() view returns (uint256)"], Nearl.provider("mainnet"));
+        document.getElementById("s-guards-main").textContent = (await mf.guardCount()).toString();
+      }
+    } catch (_) {}
+  })();
+
+  // ---------- code tabs
+  const origin = location.origin.startsWith("http") ? location.origin : "https://your-nearl-site";
+  const CODE = {
+    mcp: `<span class="c">// Add NEARL to Claude Code, Cursor or any MCP client</span>
+{
+  <span class="k">"mcpServers"</span>: {
+    <span class="k">"nearl"</span>: { "type": "http", "url": "${origin}/mcp" }
+  }
+}
+
+<span class="c">// Tool: nearl_check_token { token, network }</span>
+<span class="c">// → "score 6/100, Do not buy · safeToBuy: false"</span>`,
+    http: `<span class="k">GET</span> ${origin}/api/check?token=0x…&amp;net=mainnet
+
+{
+  <span class="k">"score"</span>: 6,
+  <span class="k">"verdict"</span>: "Do not buy",
+  <span class="k">"safeToBuy"</span>: false,
+  <span class="k">"sellTaxPct"</span>: null,
+  <span class="k">"findings"</span>: [ { "title": "Selling looks blocked" } ]
+}`,
+    skill: `<span class="c"># NEARL skill (excerpt)</span>
+Before any buy or swap on Robinhood Chain,
+check the token with NEARL.
+
+<span class="k">score ≥ 80</span>  looks safe → proceed if asked
+<span class="k">55 – 79</span>     be careful → confirm with the user
+<span class="k">score &lt; 55</span>  do not buy → explain why
+
+<span class="c"># full file: ${origin}/skill.md</span>`,
+  };
+  const codeEl = document.getElementById("code");
+  const show = (k) => {
+    codeEl.innerHTML = CODE[k];
+    document.querySelectorAll(".tabs button").forEach((b) => b.setAttribute("aria-selected", b.dataset.tab === k));
+  };
+  document.querySelectorAll(".tabs button").forEach((b) => (b.onclick = () => show(b.dataset.tab)));
+  show("mcp");
+
+  // ---------- ledger
+  const box = document.getElementById("ledger");
+  const agoT = (t) => (!t ? "—" : ago(Date.now() / 1000 - t));
+  Nearl.ledger("testnet", 6).then((rows) => {
+    box.innerHTML = rows.length ? rows.map((r) => `<div class="row"><span class="t">${agoT(r.time)}</span><span>${esc(r.text)}</span><a href="${r.url}" target="_blank" rel="noopener">tx ↗</a></div>`).join("") : '<div class="row"><span class="t">—</span><span>No activity yet.</span><span></span></div>';
+  }).catch(() => { box.innerHTML = '<div class="row"><span class="t">—</span><span>Could not reach Robinhood Chain Testnet.</span><span></span></div>'; });
+
+  // ---------- wallet button
+  const btn = document.getElementById("wallet-btn"), Wl = window.NearlWallet;
+  const render = () => {
+    if (Wl.account) { btn.innerHTML = '<span class="dot"></span>' + short(Wl.account); btn.classList.add("on"); btn.title = "Connected: " + Wl.account + ". Click to disconnect."; }
+    else { btn.textContent = "Connect wallet"; btn.classList.remove("on"); btn.title = ""; }
+  };
+  btn.addEventListener("click", async () => { if (Wl.account) await Wl.disconnect(); else await Wl.open(); render(); });
+  Wl.onChange(render); Wl.restore().then(render);
+})();
+</script>
+</body>
+</html>

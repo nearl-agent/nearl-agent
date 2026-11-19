@@ -1,0 +1,16 @@
+{
+  "network": "mainnet",
+  "chainId": 4663,
+  "notes": "0xBC4433dcf2C04c6a5f2ebF435519682636261996",
+  "asset": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+  "assetSymbol": "USDG",
+  "assetDecimals": 6,
+  "faucet": false,
+  "feeds": {
+    "0x78F3556b67E17Df817D51Ef5a990cDaF09E8d3A9": "ETH / USD"
+  },
+  "deployedAt": "2026-11-17T18:32:51.188Z",
+  "startBlock": 116791296,
+  "guardFactory": "0x0205E79CBc7680B4231C8330296e965bC9630dd1",
+  "guardStartBlock": 117562675
+}

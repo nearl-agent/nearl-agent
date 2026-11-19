@@ -1,0 +1,27 @@
+{
+  "name": "nearl",
+  "version": "0.1.0",
+  "private": true,
+  "description": "NEARL: the safety layer for onchain agents on Robinhood Chain",
+  "scripts": {
+    "compile": "hardhat compile",
+    "test": "hardhat test",
+    "web": "npx --yes serve@14.2.4 web",
+    "build:probe": "hardhat compile && node scripts/build-probe.js",
+    "build:stocks": "node scripts/build-stock-list.js"
+  },
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^5.0.0",
+    "@openzeppelin/contracts": "^5.1.0",
+    "dotenv": "^16.4.5",
+    "hardhat": "^2.22.17"
+  },
+  "dependencies": {
+    "@fontsource/inter": "5.3.0",
+    "@fontsource/source-code-pro": "5.3.1",
+    "@netlify/blobs": "^8.2.0",
+    "@resvg/resvg-wasm": "2.6.2",
+    "ethers": "^6.13.4",
+    "satori": "0.63.2"
+  }
+}

@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>NEARL App</title>
+<meta name="description" content="Deposit into NEARL structured note series on Robinhood Chain testnet or mainnet.">
+<link rel="icon" href="favicon.svg?v=1" type="image/svg+xml">
+<link rel="alternate icon" href="logo-icon.png?v=1" type="image/png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Source+Code+Pro:wght@400;500;600&display=swap">
+<style>
+/* Layout: sticky toolbar, network banner, then a responsive grid of note series cards */
+:root{
+  --paper:#E8ECEF; --surface:#F4F6F8; --ink:#121A24; --ink-2:#465363; --rule:#C3CBD4;
+  --cobalt:#2C46E8; --cobalt-soft:#D6DCFB; --on-cobalt:#FFFFFF;
+  --good:#1F7A4D; --warn:#A86A00; --bad:#B3261E; --warn-bg:#FBEFD9; --bad-bg:#F9E1DF;
+  --f-display:"Geist","Plain",-apple-system,"Segoe UI",system-ui,sans-serif;
+  --f-body:"Geist","Plain",-apple-system,"Segoe UI",system-ui,sans-serif;
+  --f-mono:"Source Code Pro",ui-monospace,Consolas,monospace;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){:root{
+  --paper:#0E1319; --surface:#18202A; --ink:#E6EBF1; --ink-2:#9AA7B6; --rule:#2A3542;
+  --cobalt:#8297FF; --cobalt-soft:#1E2A5C; --on-cobalt:#0B1020;
+  --good:#5CC48E; --warn:#E3A93F; --bad:#F07A70; --warn-bg:#2B2210; --bad-bg:#2E1614; color-scheme:dark}}
+*{box-sizing:border-box}
+html,body{margin:0}
+[hidden]{display:none!important}
+body{background:var(--paper);color:var(--ink);font:15px/1.55 var(--f-body);
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-bottom:64px}
+.wrap{max-width:1180px;margin:0 auto}
+h1,h2,h3{font-family:var(--f-display);margin:0;letter-spacing:-.02em;text-wrap:balance}
+a{color:inherit}
+button,input{font:inherit}
+:focus-visible{outline:2px solid var(--cobalt);outline-offset:2px;border-radius:6px}
+.label{font:500 11.5px var(--f-mono);letter-spacing:.1em;text-transform:uppercase;color:var(--ink-2)}
+.mono{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:10px 16px;border-radius:999px;border:1px solid var(--ink);background:transparent;color:var(--ink);font-weight:600;font-size:14px;cursor:pointer;text-decoration:none;white-space:nowrap}
+.btn.primary{background:var(--cobalt);border-color:var(--cobalt);color:var(--on-cobalt)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.logo{display:inline-block;height:20px;aspect-ratio:var(--logo-ar,1.308);background:currentColor;-webkit-mask:var(--logo-mask) center/contain no-repeat;mask:var(--logo-mask) center/contain no-repeat}
+
+header.top{position:sticky;top:0;z-index:5;background:var(--paper);border-bottom:1px solid var(--rule)}
+header.top .wrap{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding-block:12px}
+.brand{display:flex;align-items:center;gap:10px;font:800 18px var(--f-display);letter-spacing:.04em;text-decoration:none;margin-right:auto}
+.seg{display:inline-flex;border:1px solid var(--rule);border-radius:999px;padding:3px;background:var(--surface)}
+.seg button{border:0;background:transparent;color:var(--ink-2);padding:6px 14px;border-radius:999px;cursor:pointer;font-weight:600;font-size:13px}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--paper)}
+.acct{display:inline-flex;align-items:center;gap:8px;font:13px var(--f-mono);padding:8px 14px;border:1px solid var(--rule);border-radius:999px;background:var(--surface)}
+.acct .dot{width:8px;height:8px;border-radius:50%;background:var(--good);flex:none}
+.acct .lbl{font-family:var(--f-body);font-weight:600;color:var(--good)}
+
+.banner{margin-top:20px;border-radius:12px;padding:14px 16px;display:flex;gap:12px 20px;align-items:center;flex-wrap:wrap;border:1px solid var(--rule)}
+.banner p{margin:0;flex:1 1 320px;min-width:0}
+.banner.testnet{background:var(--cobalt-soft)}
+.banner.mainnet{background:var(--bad-bg);border-color:var(--bad)}
+.banner.mainnet strong{color:var(--bad)}
+.banner label{display:flex;gap:8px;align-items:center;font-weight:600;font-size:14px}
+
+.head{display:flex;justify-content:space-between;align-items:end;gap:16px;flex-wrap:wrap;margin:32px 0 16px}
+.head h1{font-size:clamp(28px,4vw,40px);font-weight:800}
+.head p{color:var(--ink-2);margin:6px 0 0;max-width:60ch}
+.stats{display:flex;gap:20px;flex-wrap:wrap}
+.stats div{display:grid}
+.stats b{font:600 18px var(--f-mono)}
+
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,360px),1fr));gap:16px}
+.card{background:var(--surface);border:1px solid var(--rule);border-radius:14px;padding:20px;display:flex;flex-direction:column;gap:16px;min-width:0}
+.card .t{display:flex;justify-content:space-between;align-items:start;gap:12px}
+.card h2{font-size:22px;font-weight:800}
+.pill{font:500 11px var(--f-mono);letter-spacing:.08em;text-transform:uppercase;padding:4px 9px;border-radius:999px;border:1px solid currentColor;white-space:nowrap}
+.s0{color:var(--cobalt)}.s1{color:var(--good)}.s2,.s3{color:var(--ink-2)}.s4{color:var(--bad)}
+.kv{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.kv div{border-top:2px solid var(--ink);padding-top:6px;min-width:0}
+.kv b{display:block;font:600 14.5px var(--f-mono);font-variant-numeric:tabular-nums;overflow-wrap:anywhere;min-width:0}
+.kv.two{grid-template-columns:repeat(2,1fr)}
+.kv.three{grid-template-columns:repeat(3,1fr)}
+@media (max-width:420px){.kv{grid-template-columns:repeat(2,1fr)}}
+.bar{height:6px;border-radius:3px;background:var(--rule);overflow:hidden}
+.bar i{display:block;height:100%;background:var(--cobalt)}
+.row{display:flex;justify-content:space-between;gap:12px;font-size:13px;color:var(--ink-2)}
+.sched{list-style:none;margin:0;padding:0;display:grid;gap:4px;font:12.5px var(--f-mono)}
+.sched li{display:flex;justify-content:space-between;gap:8px;color:var(--ink-2)}
+.sched li.next{color:var(--ink);font-weight:500}
+.sched li.done{text-decoration:line-through;opacity:.6}
+.pos{border-top:1px solid var(--rule);padding-top:14px;display:grid;gap:10px}
+.act{display:flex;gap:8px;flex-wrap:wrap}
+.act input{flex:1 1 120px;min-width:0;padding:10px 14px;border-radius:999px;border:1px solid var(--rule);background:var(--paper);color:var(--ink)}
+.note{font-size:12.5px;color:var(--ink-2)}
+.empty{border:1px dashed var(--rule);border-radius:14px;padding:32px;text-align:center;color:var(--ink-2)}
+.empty code{font-family:var(--f-mono);background:var(--surface);padding:2px 6px;border-radius:4px}
+
+.admin{margin-top:32px;border:1px solid var(--rule);border-radius:14px;padding:20px;display:grid;gap:12px}
+.admin .act{align-items:center}
+
+#toast{position:fixed;left:50%;bottom:max(16px,env(safe-area-inset-bottom,0px));transform:translateX(-50%);max-width:min(560px,calc(100% - 32px));background:var(--ink);color:var(--paper);padding:12px 16px;border-radius:12px;font-size:14px;z-index:20;box-shadow:0 8px 24px rgba(0,0,0,.25)}
+#toast a{color:inherit}
+footer{margin-top:48px;color:var(--ink-2);font-size:13px;border-top:1px solid var(--rule);padding-top:20px;display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
+footer p{margin:0;max-width:70ch}
+.navlink{font-weight:600;font-size:14px;text-decoration:none;color:var(--ink-2);margin-right:auto}
+.navlink:hover{color:var(--ink)}
+.brand{margin-right:16px}
+.reward{display:flex;align-items:baseline;flex-wrap:wrap;gap:8px;color:var(--ink-2);font-size:14px}
+.reward b{font:800 30px var(--f-display);color:var(--good)}
+.streak{margin-left:auto;font:500 12.5px var(--f-mono);background:var(--warn-bg);color:var(--warn);padding:4px 9px;border-radius:999px}
+.zone{padding:10px 12px;border-radius:10px;font-size:14px;font-weight:500}
+.zone.safe{background:color-mix(in srgb,var(--good) 14%,transparent);color:var(--good)}
+.zone.win{background:var(--warn-bg);color:var(--warn)}
+.zone.below{background:var(--bad-bg);color:var(--bad)}
+.due{margin:0;font:500 13.5px var(--f-mono);color:var(--ink)}
+.schedwrap summary{cursor:pointer;font-size:13px;color:var(--ink-2)}
+.schedwrap .sched{margin-top:8px}
+</style>
+<link rel="stylesheet" href="theme.css?v=7">
+</head>
+<body>
+<nav class="topnav">
+  <div class="in">
+    <a class="brand" href="index.html"><span class="logo" aria-hidden="true"></span>NEARL</a>
+    <div class="links"><a href="token.html">$NEARL</a><a href="check.html">Check</a><a href="swap.html">Swap</a><a href="guard.html">Guard</a><a href="app.html" aria-current="page">Earn</a><a href="docs.html">Docs</a></div>
+    <div class="seg" role="group" aria-label="Network">
+      <button type="button" id="net-testnet" aria-pressed="true">Testnet</button>
+      <button type="button" id="net-mainnet" aria-pressed="false">Mainnet</button>
+    </div>
+    <span class="acct" id="acct" hidden></span>
+    <button class="btn sm" type="button" id="disconnect" hidden>Disconnect</button>
+    <button class="btn primary sm" type="button" id="connect">Connect wallet</button>
+  </div>
+</nav>
+
+<main class="wrap">
+  <div id="banner"></div>
+  <div class="head">
+    <div>
+      <h1 id="title">Pools</h1>
+      <p id="subtitle">Join a pool, earn a reward on every check while the price stays above the safety line, and claim your deposit back when the pool ends.</p>
+    </div>
+    <div class="stats" id="stats"></div>
+  </div>
+  <div class="grid" id="series"></div>
+  <section class="admin" id="admin" hidden></section>
+  <p class="note" style="margin-top:32px">NEARL smart contracts have not been audited by an outside firm yet (<a href="contracts.html#security">see how they were checked</a>). Pools can lose value when the price ends below the safety line. Only deposit amounts you can afford to lose. Nothing here is investment advice.</p>
+</main>
+
+<footer id="site-footer"></footer>
+<div id="toast" role="status" aria-live="polite" hidden></div>
+
+<script src="https://cdn.jsdelivr.net/npm/ethers@6.13.4/dist/ethers.umd.min.js"></script>
+<script src="rpc.js?v=6"></script>
+<script src="logo.js?v=2"></script>
+<script src="footer.js"></script>
+<script src="wallet.js"></script>
+<script src="app.js?v=8"></script>
+</body>
+</html>

@@ -1,0 +1,13 @@
+{
+  "label": "ETH / USD",
+  "feed": "0x78F3556b67E17Df817D51Ef5a990cDaF09E8d3A9",
+  "barrierBps": 7000,
+  "autocallBps": 10000,
+  "couponBps": 100,
+  "maxPriceAgeSeconds": 10800,
+  "subscriptionHours": 72,
+  "observationIntervalDays": 7,
+  "observations": 3,
+  "perUserCap": 10,
+  "totalCap": 100
+}

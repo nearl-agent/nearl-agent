@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>NEARL Terms</title>
+<meta name="description" content="Terms of use and risk disclosure for the NEARL website, API, MCP server and smart contracts.">
+<link rel="icon" href="favicon.svg?v=1" type="image/svg+xml">
+<link rel="alternate icon" href="logo-icon.png?v=1" type="image/png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Source+Code+Pro:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="theme.css?v=7">
+</head>
+<body>
+<nav class="topnav">
+  <div class="in">
+    <a class="brand" href="index.html"><span class="logo" aria-hidden="true"></span>NEARL</a>
+    <div class="links"><a href="token.html">$NEARL</a><a href="check.html">Check</a><a href="swap.html">Swap</a><a href="guard.html">Guard</a><a href="app.html">Earn</a><a href="docs.html">Docs</a></div>
+  </div>
+</nav>
+
+<main class="wrap">
+  <header class="page-head">
+    <span class="eyebrow">Legal</span>
+    <h1 style="margin-top:10px">Terms of use</h1>
+    <p>Last updated 18 November 2026.</p>
+  </header>
+
+  <div class="doc-layout">
+    <aside class="toc" aria-label="On this page">
+      <a href="#about">1. About these terms</a>
+      <a href="#service">2. What NEARL is</a>
+      <a href="#risk">3. Risk disclosure</a>
+      <a href="#noadvice">4. No advice</a>
+      <a href="#wallets">5. Wallets and keys</a>
+      <a href="#testnet">6. Testnet</a>
+      <a href="#api">7. API and MCP use</a>
+      <a href="#prohibited">8. Prohibited use</a>
+      <a href="#liability">9. Liability</a>
+      <a href="#changes">10. Changes</a>
+      <a href="#contact">11. Contact</a>
+    </aside>
+
+    <article class="prose">
+      <div class="callout info">Plain-language summary: NEARL is free, experimental software. It runs on public smart contracts you interact with directly from your own wallet. Automated checks can be wrong, the contracts are not audited, and you can lose money. You are responsible for your own decisions.</div>
+
+      <h2 id="about">1. About these terms</h2>
+      <p>These terms apply to the NEARL website, the Check page, the HTTP API, the MCP server, the agent skill file, and the NEARL smart contracts on Robinhood Chain (together, "NEARL"). By using NEARL you agree to them. If you do not agree, do not use NEARL.</p>
+
+      <h2 id="service">2. What NEARL is</h2>
+      <p>NEARL is an interface and a set of open-source smart contracts. NEARL does not hold your funds, does not hold your private keys, and cannot move funds in your wallet. Transactions happen between your wallet and public contracts on Robinhood Chain, and you sign each one yourself.</p>
+      <p>NEARL is not a bank, broker, exchange, lender, investment adviser or custodian.</p>
+
+      <h2 id="risk">3. Risk disclosure</h2>
+      <p>Using NEARL and blockchains carries real risk. In particular:</p>
+      <ul>
+        <li><strong>Unaudited contracts.</strong> NEARL contracts have not been audited. A bug could cause the loss of all funds held in them.</li>
+        <li><strong>Check can be wrong.</strong> A safety score is the output of automated checks. It can miss risks, and a token's behaviour can change after it is checked. A high score is not a guarantee and a low score is not proof of fraud.</li>
+        <li><strong>Earn pools can lose value.</strong> If the price ends below the safety line, your deposit is returned at the price ratio and can be worth much less than you put in.</li>
+        <li><strong>Guard.</strong> Guard limits what an agent key can spend, but an approved router may send swap output to any address the agent chooses. Losses up to your limits are possible if an agent key leaks.</li>
+        <li><strong>Agents.</strong> AI agents can misread instructions and make mistakes. You are responsible for any agent you run.</li>
+        <li><strong>Network and oracle risk.</strong> Robinhood Chain, its RPC, price feeds or third-party contracts (such as Uniswap) can fail, pause or behave unexpectedly.</li>
+        <li><strong>Regulatory risk.</strong> Laws on digital assets and structured products differ by country and can change. You are responsible for following the laws that apply to you.</li>
+      </ul>
+      <p>Only use amounts you can afford to lose.</p>
+
+      <h2 id="noadvice">4. No advice</h2>
+      <p>Nothing on NEARL is financial, investment, legal or tax advice, or a recommendation to buy, sell or hold any asset. Check results, scores, stats and examples are information only.</p>
+
+      <h2 id="wallets">5. Wallets and keys</h2>
+      <p>You are solely responsible for your wallet, private keys and seed phrase, and for every transaction you sign. NEARL will never ask for your private key or seed phrase. Anyone who does is not NEARL.</p>
+
+      <h2 id="testnet">6. Testnet</h2>
+      <p>Testnet tokens, including tUSD and test ETH, have no value and cannot be exchanged for money. Testnet balances may be reset at any time.</p>
+
+      <h2 id="api">7. API and MCP use</h2>
+      <p>You may use the Check API and MCP server in your own tools and agents, within the published rate limits. Do not attempt to get around rate limits, overload the service, or present NEARL results as your own guarantee. The API and MCP server may change or become unavailable without notice.</p>
+
+      <h2 id="prohibited">8. Prohibited use</h2>
+      <p>Do not use NEARL to break the law, launder money, evade sanctions, attack or exploit the contracts or other users, or misrepresent NEARL results. If you find a vulnerability, please report it privately instead of exploiting it.</p>
+
+      <h2 id="liability">9. Liability</h2>
+      <p>NEARL is provided "as is" and "as available", without warranties of any kind. To the maximum extent allowed by law, the NEARL team is not liable for any loss of funds, profits or data, or for any indirect or consequential damages, arising from your use of NEARL, the contracts, third-party services or AI agents.</p>
+
+      <h2 id="changes">10. Changes</h2>
+      <p>We may update these terms. The date at the top shows the latest version. Continuing to use NEARL after a change means you accept the updated terms.</p>
+
+      <h2 id="contact">11. Contact</h2>
+      <p>Questions and security reports: open an issue or contact the team through the NEARL GitHub repository.</p>
+
+      <div class="callout">These terms are a starting template written for an experimental project. They are not legal advice. Have them reviewed by a lawyer before NEARL handles real user funds.</div>
+    </article>
+  </div>
+</main>
+
+<footer id="site-footer"></footer>
+<script src="logo.js?v=2"></script>
+<script src="footer.js"></script>
+</body>
+</html>

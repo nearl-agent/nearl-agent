@@ -1,0 +1,21 @@
+{
+  "network": "testnet",
+  "chainId": 46630,
+  "notes": "0x99c972591a4Fb694dCe6aea07e597d0d16773AbE",
+  "asset": "0xBC4433dcf2C04c6a5f2ebF435519682636261996",
+  "assetSymbol": "tUSD",
+  "assetDecimals": 6,
+  "faucet": true,
+  "mockFeed": "0x45879E7a84de8b4C00e4222c4abb6a7F489564BF",
+  "feeds": {
+    "0xd5697345Dc1da6A83042c3F9d7714E497E8fA5EA": "ETH / USD (test)",
+    "0x45879E7a84de8b4C00e4222c4abb6a7F489564BF": "ETH / USD (test)"
+  },
+  "deployedAt": "2026-11-17T18:24:07.875Z",
+  "startBlock": 154627749,
+  "guardFactory": "0xEBc3FAbd5C044b0Cae5D34dB1dc9A2cBA2f668E6",
+  "guardStartBlock": 154962175,
+  "previousMockFeeds": [
+    "0xd5697345Dc1da6A83042c3F9d7714E497E8fA5EA"
+  ]
+}

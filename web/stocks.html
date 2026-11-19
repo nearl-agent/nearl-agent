@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Official Stock Tokens · NEARL</title>
+<meta name="description" content="Every official Robinhood stock token on Robinhood Chain, read from Robinhood's own StockFactory contract. Check a ticker before you buy.">
+<link rel="icon" href="favicon.svg?v=1" type="image/svg+xml">
+<link rel="alternate icon" href="logo-icon.png?v=1" type="image/png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Source+Code+Pro:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="theme.css?v=7">
+<style>
+.copy{border:1px solid var(--rule);background:transparent;color:var(--ink-2);border-radius:6px;padding:2px 8px;font:500 12px var(--f-mono);cursor:pointer;margin-left:6px}
+section{margin-top:36px}
+section h2{font-size:24px;font-weight:800;margin-bottom:6px}
+section > p{color:var(--ink-2);margin-bottom:14px;max-width:70ch}
+ol.steps{color:var(--ink-2);line-height:1.8;max-width:70ch;padding-left:20px}
+.find{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:0 0 14px}
+.find input{flex:1 1 240px;min-width:0;border:1px solid var(--rule);background:transparent;color:var(--ink);border-radius:10px;padding:10px 12px;font:500 15px var(--f-mono)}
+.find span{color:var(--ink-2);font-size:14px}
+td.tk{font:600 15px var(--f-mono);white-space:nowrap}
+td.mono a{word-break:break-all}
+.chk{white-space:nowrap}
+</style>
+</head>
+<body>
+<nav class="topnav">
+  <div class="in">
+    <a class="brand" href="index.html"><span class="logo" aria-hidden="true"></span>NEARL</a>
+    <div class="links"><a href="token.html">$NEARL</a><a href="check.html">Check</a><a href="swap.html">Swap</a><a href="guard.html">Guard</a><a href="app.html">Earn</a><a href="docs.html">Docs</a></div>
+  </div>
+</nav>
+
+<main class="wrap">
+  <header class="page-head">
+    <span class="eyebrow">Stock tokens</span>
+    <h1 style="margin-top:10px">Is that TSLA real?</h1>
+    <p>Anyone can launch a token called TSLA or NVDA on Robinhood Chain. Only the ones below were created by Robinhood. Before you buy a stock token, make sure its address is on this list.</p>
+  </header>
+
+  <section>
+    <h2>Official Robinhood stock tokens</h2>
+    <p id="summary">Loading the list…</p>
+    <div class="find"><input id="q" type="search" placeholder="Search a ticker, company or address" aria-label="Search stock tokens" autocomplete="off"><span id="count"></span></div>
+    <div class="tbl"><table><thead><tr><th>Ticker</th><th>Company</th><th>Address</th><th></th></tr></thead><tbody id="rows"></tbody></table></div>
+  </section>
+
+  <section id="how">
+    <h2>How NEARL knows</h2>
+    <p>This list is not typed in by hand. It is read from the blockchain:</p>
+    <ol class="steps">
+      <li>Robinhood creates every stock token through one contract, its <strong>StockFactory</strong> (<a id="factory" class="mono" target="_blank" rel="noopener"></a>). Each time, the factory records the new token's address, name and ticker on-chain.</li>
+      <li>NEARL reads all of those records, then checks that each token runs on Robinhood's stock-token code (<a id="beacon" class="mono" target="_blank" rel="noopener"></a>).</li>
+      <li>Only Robinhood can create tokens with that factory. A test call from any other address is refused.</li>
+    </ol>
+    <p>When you check a token on <a href="check.html">Check</a>, NEARL marks an official stock token as official, and warns you when a token only copies a stock's ticker or name. A stock token newer than this list is confirmed against the factory on the spot.</p>
+    <p><strong>Good to know.</strong> Robinhood describes stock tokens as tracking the share price without giving you ownership of the share itself. Robinhood can upgrade, mint and freeze them, as an issuer would. This page shows which tokens are real; it is not investment advice.</p>
+  </section>
+</main>
+
+<footer id="site-footer"></footer>
+<script src="logo.js?v=2"></script>
+<script src="footer.js?v=2"></script>
+<script src="stock-tokens.js?v=1"></script>
+<script>
+(function () {
+  "use strict";
+  const EX = "https://robinhoodchain.blockscout.com";
+  const S = window.NearlStockTokens;
+  const $ = (id) => document.getElementById(id);
+  const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+  if (!S || !S.tokens.length) { $("summary").textContent = "The list could not be loaded. Please try again later."; return; }
+
+  for (const [id, a] of [["factory", S.factory], ["beacon", S.beacon]]) { $(id).href = `${EX}/address/${a}`; $(id).textContent = a; }
+  const day = new Date(S.updated).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
+  $("summary").textContent = `${S.tokens.filter((t) => !t.symbol.includes("_")).length} stock tokens, read from Robinhood's StockFactory up to block ${S.scannedTo.toLocaleString("en-US")} (${day}).`;
+
+  const all = S.tokens.filter((t) => !t.symbol.includes("_")).map((t) => ({ ...t, company: t.name.split(" • ")[0] })).sort((a, b) => a.symbol.localeCompare(b.symbol));
+  function render() {
+    const q = $("q").value.trim().toLowerCase();
+    const list = q ? all.filter((t) => t.symbol.toLowerCase().includes(q) || t.company.toLowerCase().includes(q) || t.address.toLowerCase() === q) : all;
+    $("count").textContent = q ? `${list.length} of ${all.length}` : "";
+    $("rows").innerHTML = list.length
+      ? list.map((t) => `<tr><td class="tk">${esc(t.symbol)}</td><td>${esc(t.company)}</td><td class="mono"><a href="${EX}/token/${t.address}" target="_blank" rel="noopener">${t.address}</a><button class="copy" type="button" data-a="${t.address}">Copy</button></td><td class="chk"><a href="check.html?token=${t.address}">Check →</a></td></tr>`).join("")
+      : `<tr><td colspan="4">No official stock token matches “${esc(q)}”. If someone sold you a token by that name, check it on <a href="check.html">Check</a> first.</td></tr>`;
+  }
+  $("q").addEventListener("input", render);
+  render();
+
+  document.addEventListener("click", async (e) => {
+    const b = e.target.closest(".copy");
+    if (!b) return;
+    try { await navigator.clipboard.writeText(b.dataset.a); b.textContent = "Copied"; setTimeout(() => (b.textContent = "Copy"), 1500); } catch (_) {}
+  });
+})();
+</script>
+</body>
+</html>

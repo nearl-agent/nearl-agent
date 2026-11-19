@@ -1,0 +1,219 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>NEARL Docs</title>
+<meta name="description" content="How NEARL works: Check, the API and MCP server, Guard, Earn, networks and limits.">
+<link rel="icon" href="favicon.svg?v=1" type="image/svg+xml">
+<link rel="alternate icon" href="logo-icon.png?v=1" type="image/png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Source+Code+Pro:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="theme.css?v=7">
+</head>
+<body>
+<nav class="topnav">
+  <div class="in">
+    <a class="brand" href="index.html"><span class="logo" aria-hidden="true"></span>NEARL</a>
+    <div class="links"><a href="token.html">$NEARL</a><a href="check.html">Check</a><a href="swap.html">Swap</a><a href="guard.html">Guard</a><a href="app.html">Earn</a><a href="docs.html" aria-current="page">Docs</a></div>
+  </div>
+</nav>
+
+<main class="wrap">
+  <header class="page-head">
+    <span class="eyebrow">Documentation</span>
+    <h1 style="margin-top:10px">NEARL Docs</h1>
+    <p>Everything you need to use NEARL as a trader, connect it to an AI agent, or build on its contracts.</p>
+  </header>
+
+  <div class="doc-layout">
+    <aside class="toc" aria-label="On this page">
+      <span class="grp">Start</span>
+      <a href="#overview">Overview</a>
+      <a href="#networks">Networks</a>
+      <a href="#wallet">Connect a wallet</a>
+      <span class="grp">Products</span>
+      <a href="#check">Check</a>
+      <a href="#scoring">How scoring works</a>
+      <a href="#guard">Guard</a>
+      <a href="#earn">Earn</a>
+      <span class="grp">Build</span>
+      <a href="#api">HTTP API</a>
+      <a href="#mcp">MCP server</a>
+      <a href="#skill">Agent skill file</a>
+      <a href="#contracts">Contracts</a>
+      <span class="grp">More</span>
+      <a href="#limits">Limits</a>
+      <a href="#faq">FAQ</a>
+    </aside>
+
+    <article class="prose">
+      <h2 id="overview">Overview</h2>
+      <p>NEARL is the safety layer for onchain agents on <strong>Robinhood Chain</strong>. It helps people and AI agents trade without walking into scams or draining a wallet. It has three parts:</p>
+      <div class="tbl"><table>
+        <thead><tr><th>Product</th><th>What it does</th><th>Status</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Check</strong></td><td>Safety score for any token before you buy it</td><td>Live on mainnet</td></tr>
+          <tr><td><strong>Guard</strong></td><td>A wallet an agent can use but cannot empty</td><td>Live on mainnet and testnet</td></tr>
+          <tr><td><strong>Earn</strong></td><td>Reward pools that pay while a price stays above a safety line</td><td>Live on mainnet (one small pool) and testnet</td></tr>
+        </tbody>
+      </table></div>
+      <p>There is <strong>no NEARL token</strong>. Anyone selling one is not us.</p>
+
+      <h2 id="networks">Networks</h2>
+      <div class="tbl"><table>
+        <thead><tr><th></th><th>Mainnet</th><th>Testnet</th></tr></thead>
+        <tbody>
+          <tr><td>Name</td><td>Robinhood Chain</td><td>Robinhood Chain Testnet</td></tr>
+          <tr><td>Chain ID</td><td class="mono">4663</td><td class="mono">46630</td></tr>
+          <tr><td>RPC</td><td class="mono">https://rpc.mainnet.chain.robinhood.com</td><td class="mono">https://rpc.testnet.chain.robinhood.com</td></tr>
+          <tr><td>Explorer</td><td><a href="https://robinhoodchain.blockscout.com" target="_blank" rel="noopener">robinhoodchain.blockscout.com</a></td><td><a href="https://explorer.testnet.chain.robinhood.com" target="_blank" rel="noopener">explorer.testnet.chain.robinhood.com</a></td></tr>
+          <tr><td>Gas token</td><td>ETH</td><td>Test ETH (free from faucets)</td></tr>
+          <tr><td>Dollar token</td><td>USDG (Paxos)</td><td>tUSD (NEARL test dollar, free)</td></tr>
+        </tbody>
+      </table></div>
+      <p>Check reads real tokens on mainnet. Guard runs on mainnet and testnet. Earn runs on testnet, plus one small capped pool on mainnet.</p>
+
+      <h2 id="wallet">Connect a wallet</h2>
+      <ol>
+        <li>Install a browser wallet such as MetaMask or Rabby.</li>
+        <li>Click <strong>Connect wallet</strong>. NEARL lists every wallet it finds in your browser.</li>
+        <li>Approve the connection in your wallet. NEARL asks your wallet to add Robinhood Chain (or the testnet) if it is missing.</li>
+        <li>To try testnet features, get free test ETH from a Robinhood Chain Testnet faucet, then press <strong>Get 10,000 test USD</strong> on the Earn page.</li>
+      </ol>
+      <p>NEARL never sees your private key. Your wallet signs each transaction after you approve it.</p>
+
+      <h2 id="check">Check</h2>
+      <p>Paste a token address on the <a href="check.html">Check page</a>. NEARL runs these checks in your browser against the public RPC. Nothing is signed or sent.</p>
+      <ul>
+        <li><strong>Simulated buy, sell and transfer.</strong> NEARL runs a trade on a private copy of the chain (an <code>eth_call</code> with state overrides) through the token's deepest pool, including Uniswap v4 pools with hooks such as Pons launches. A failed sell means a possible honeypot.</li>
+        <li><strong>Taxes.</strong> The difference between tokens sent and tokens received.</li>
+        <li><strong>Owner powers.</strong> NEARL reads the contract bytecode for mint, blacklist, tax-change, trading switch and transaction-limit functions, and checks whether ownership was renounced.</li>
+        <li><strong>Upgradeability.</strong> EIP-1967 proxy slots, which let a team replace the code later.</li>
+        <li><strong>Supply.</strong> Share held by the owner and share burned.</li>
+        <li><strong>Liquidity.</strong> The deepest Uniswap v3 or v4 pool against ETH, WETH or USDG, in dollars.</li>
+      </ul>
+
+      <h3 id="scoring">How scoring works</h3>
+      <p>Every token starts at 100. Each risk found removes points. The total gives the verdict:</p>
+      <div class="tbl"><table>
+        <thead><tr><th>Score</th><th>Verdict</th><th>Meaning</th></tr></thead>
+        <tbody>
+          <tr><td>80–100</td><td>Looks safe</td><td>No known red flags found</td></tr>
+          <tr><td>55–79</td><td>Be careful</td><td>Some risks; read the findings first</td></tr>
+          <tr><td>25–54</td><td>High risk</td><td>Serious risks found</td></tr>
+          <tr><td>0–24</td><td>Do not buy</td><td>For example, the sell simulation failed</td></tr>
+        </tbody>
+      </table></div>
+      <div class="tbl"><table>
+        <thead><tr><th>Finding</th><th>Points</th></tr></thead>
+        <tbody>
+          <tr><td>Selling blocked (possible honeypot)</td><td>−100</td></tr>
+          <tr><td>Buying blocked, or wallet transfers fail</td><td>−40</td></tr>
+          <tr><td>Tax above 10%</td><td>−30</td></tr>
+          <tr><td>Owner can mint</td><td>−25</td></tr>
+          <tr><td>Owner can blacklist wallets</td><td>−20</td></tr>
+          <tr><td>No Uniswap pool found</td><td>−20</td></tr>
+          <tr><td>Upgradeable code · owner can change tax · owner can pause trading · very low liquidity · owner holds over 20%</td><td>−15 each</td></tr>
+          <tr><td>Tax between 2% and 10%</td><td>−10</td></tr>
+          <tr><td>Has an owner · low liquidity · owner holds 5–20% · owner can set wallet limits</td><td>−5 each</td></tr>
+        </tbody>
+      </table></div>
+      <p>If the sell could not be simulated, the score is capped at 70 (Be careful), except for well-known tokens such as USDG and WETH.</p>
+      <div class="callout">A good score is not a guarantee. Automated checks can miss risks. Treat the score as one input.</div>
+
+      <h2 id="guard">Guard</h2>
+      <p>Guard is a smart-contract wallet for an AI agent. You (the owner) fund it and set the rules. The agent gets its own key and can only act inside those rules.</p>
+      <ul>
+        <li><strong>Daily limit</strong> and <strong>per-trade limit</strong> for each token (or ETH). The daily limit resets every UTC day.</li>
+        <li><strong>Approved recipients</strong>: the only addresses the agent can pay.</li>
+        <li><strong>Approved contracts</strong>: the only contracts the agent can call, such as a DEX router. Approve routers only, never token contracts.</li>
+        <li><strong>Exact allowances</strong>: when the agent calls a router, Guard approves exactly the amount for that call, measures what was really spent, and resets the approval to zero.</li>
+        <li><strong>Withdrawals</strong> only go to the owner. <strong>Pause</strong> stops the agent instantly.</li>
+        <li>Every action emits an event, shown as the Guard's activity log.</li>
+      </ul>
+      <h3>Set up a Guard</h3>
+      <ol>
+        <li>Open <a href="guard.html">Guard</a>, connect your wallet and enter the agent's wallet address (never your own).</li>
+        <li>Send test USD to the Guard, set a daily and per-trade limit, and approve recipients or a router.</li>
+        <li>Give the agent its key. It calls <code>pay(token, to, amount)</code> or <code>execute(target, data, token, maxSpend)</code> on the Guard.</li>
+      </ol>
+
+      <h2 id="earn">Earn</h2>
+      <p>An Earn pool follows an asset price. When joining closes, the pool records the start price. On each check date:</p>
+      <ul>
+        <li>Price at or above the <strong>early win line</strong> (for example 100% of start): the pool ends early with a reward and your full deposit back.</li>
+        <li>Price above the <strong>safety line</strong> (for example 70% of start): a reward is paid.</li>
+        <li>Price below the safety line: no reward for that check.</li>
+      </ul>
+      <p>If the price is below the safety line on the final check, your deposit is paid back at the price ratio (final price ÷ start price). All rewards are locked in the contract before the pool opens. If checks stop for 7 days, anyone can trigger an emergency exit that returns every deposit.</p>
+      <p>On testnet, a keeper runs every three hours to start pools and run due checks, and moves the test price a little each time.</p>
+
+      <h2 id="api">HTTP API</h2>
+      <p>The Check API returns the same result as the Check page.</p>
+      <pre><code>GET /api/check?token=0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168&amp;net=mainnet</code></pre>
+      <pre><code>{
+  "token": "0x5fc5…1d168",
+  "name": "Global Dollar",
+  "symbol": "USDG",
+  "score": 55,
+  "verdict": "Be careful",
+  "safeToBuy": true,
+  "buyTaxPct": 0,
+  "sellTaxPct": 0,
+  "liquidityUsd": 17935827,
+  "upgradeable": true,
+  "owner": "0xcFA0…4C6F",
+  "findings": [{ "level": "bad", "title": "Owner can create new tokens (mint)", "detail": "…" }],
+  "checkedAt": "2026-11-18T12:00:00.000Z"
+}</code></pre>
+      <ul>
+        <li><code>net</code> is <code>mainnet</code> (default) or <code>testnet</code>.</li>
+        <li><code>safeToBuy</code> is true when the score is 55 or higher.</li>
+        <li>Limit: 20 checks per minute per IP. Over the limit you get HTTP 429 with a <code>Retry-After</code> header.</li>
+        <li>Results are cached for 2 minutes.</li>
+      </ul>
+
+      <h2 id="mcp">MCP server</h2>
+      <p>Agents that support the Model Context Protocol can call NEARL directly. The server is stateless and speaks Streamable HTTP with JSON responses.</p>
+      <pre><code>{
+  "mcpServers": {
+    "nearl": { "type": "http", "url": "https://YOUR-NEARL-SITE/mcp" }
+  }
+}</code></pre>
+      <p>Tool: <code>nearl_check_token</code> with <code>{ "token": "0x…", "network": "mainnet" }</code>. It returns a short text summary plus the full result as structured content. The same rate limit as the API applies.</p>
+
+      <p><strong>Stock tokens.</strong> The result has a <code>stockToken</code> field. It is <code>{ "official": true, "symbol": "TSLA", … }</code> for a token created by Robinhood's StockFactory, <code>{ "official": false, "impersonates": "TSLA", "officialAddress": "0x…" }</code> for a token that copies a stock (its ticker together with the company name, or the name alone), <code>{ "official": false, "lookalikeOf": "AXON", … }</code> when the ticker is the same and the name is similar, <code>{ "official": false, "sameTickerAs": "RUN", … }</code> when only the ticker is the same, and <code>null</code> for anything else. The full list is on <a href="stocks.html">Official stock tokens</a>.</p>
+
+      <h2 id="skill">Agent skill file</h2>
+      <p>Give your agent the <a href="skill.md" target="_blank" rel="noopener">NEARL skill file</a>. It tells the agent to check every token with NEARL before buying, and to skip tokens where <code>safeToBuy</code> is false.</p>
+
+      <h2 id="contracts">Contracts</h2>
+      <p>All NEARL contracts are open source and verified on Blockscout. See the full list with addresses on the <a href="contracts.html">Contracts page</a>.</p>
+
+      <h2 id="limits">Limits</h2>
+      <ul>
+        <li>Contracts are <strong>not audited by an outside firm yet</strong>. They are verified, tested, fuzz-tested and scanned with Slither and Mythril (see <a href="contracts.html#security">Contracts → Security</a>), which lowers the risk but does not remove it. Mainnet features stay small and capped until an audit.</li>
+        <li>Check simulates trades on Uniswap v3 and v4, and on Pons V2 launch curves. Tokens on other launchpads that have no Uniswap pool yet cannot be simulated.</li>
+        <li>Holders, launch snipers, bundle wallets and the creator's other Pons launches are rebuilt from every transfer on chain. For tokens with a long history this takes too long, so that part is skipped and marked as not checked. The API gives it a shorter time budget than the website.</li>
+        <li>The public RPC limits log searches, so Uniswap v4 checks can take 10–20 seconds.</li>
+        <li>Earn on testnet uses a test price feed moved by the keeper, not a real oracle.</li>
+      </ul>
+
+      <h2 id="faq">FAQ</h2>
+      <h3>Does NEARL hold my funds?</h3>
+      <p>No. Check is read-only. Guard and Earn funds sit in public smart contracts. Guard withdrawals only go to the owner.</p>
+      <h3>Why did a token I know is fine get "Be careful"?</h3>
+      <p>Usually because the owner keeps powers such as minting or upgrades, or because the sell could not be simulated. Read the findings; they explain each point.</p>
+      <h3>Is there a NEARL token or airdrop?</h3>
+      <p>No. There is no token and no airdrop.</p>
+    </article>
+  </div>
+</main>
+
+<footer id="site-footer"></footer>
+<script src="logo.js?v=2"></script>
+<script src="footer.js"></script>
+</body>
+</html>
