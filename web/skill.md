@@ -12,13 +12,13 @@ Tell the user the score and the top risks in one or two sentences.
 
 Option A, MCP (preferred if your client supports remote MCP servers):
 
-- Server URL: `https://<your-nearl-site>/mcp`
+- Server URL: `https://nearlagent.com/mcp`
 - Tool: `nearl_check_token` with `{ "token": "0x...", "network": "mainnet" }`
 
 Option B, HTTP:
 
 ```
-GET https://<your-nearl-site>/api/check?token=0x...&net=mainnet
+GET https://nearlagent.com/api/check?token=0x...&net=mainnet
 ```
 
 The response includes `score` (0-100), `verdict`, `safeToBuy`, `buyTaxPct`, `sellTaxPct`,

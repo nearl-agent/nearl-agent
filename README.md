@@ -4,7 +4,7 @@
 
 Before an AI agent or a trader buys a token or sends money, NEARL checks the token and limits what can be spent.
 
-Website: <https://funny-kataifi-fe49db.netlify.app> · X: [@nearlagent](https://x.com/nearlagent)
+Website: <https://nearlagent.com> · X: [@nearlagent](https://x.com/nearlagent)
 
 ## Products
 
@@ -26,7 +26,32 @@ NEARL offers **no credit or lending**. The contracts are **not audited**, so mai
 | RPC | `https://rpc.mainnet.chain.robinhood.com` | `https://rpc.testnet.chain.robinhood.com` |
 | Explorer | <https://robinhoodchain.blockscout.com> | <https://explorer.testnet.chain.robinhood.com> |
 
-Contract addresses are in [`web/deployments/`](web/deployments) and on the website's Contracts page. Mainnet contracts are verified on Sourcify and Blockscout; the inputs used are in [`verify/`](verify).
+Contract addresses are listed below, in [`web/deployments/`](web/deployments), and on the website's [Contracts page](https://nearlagent.com/contracts.html). Mainnet contracts are verified on Sourcify and Blockscout; the inputs used are in [`verify/`](verify).
+
+## Deployed contracts
+
+The source of every deployed contract is in [`contracts/`](contracts). Addresses are also kept in [`web/deployments/`](web/deployments).
+
+### Mainnet (chain 4663)
+
+| Contract | Source | Address |
+|---|---|---|
+| NearlNotes (Earn pools) | [`contracts/NearlNotes.sol`](contracts/NearlNotes.sol) | [`0xBC4433dcf2C04c6a5f2ebF435519682636261996`](https://robinhoodchain.blockscout.com/address/0xBC4433dcf2C04c6a5f2ebF435519682636261996) |
+| NearlGuardFactory (Guard wallets) | [`contracts/guard/NearlGuardFactory.sol`](contracts/guard/NearlGuardFactory.sol) | [`0x0205E79CBc7680B4231C8330296e965bC9630dd1`](https://robinhoodchain.blockscout.com/address/0x0205E79CBc7680B4231C8330296e965bC9630dd1) |
+| NearlGuard (one per agent, made by the factory) | [`contracts/guard/NearlGuard.sol`](contracts/guard/NearlGuard.sol) | created per user |
+
+External contracts NEARL uses on mainnet (not written by NEARL): USDG [`0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168`](https://robinhoodchain.blockscout.com/address/0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168) and the ETH / USD price feed [`0x78F3556b67E17Df817D51Ef5a990cDaF09E8d3A9`](https://robinhoodchain.blockscout.com/address/0x78F3556b67E17Df817D51Ef5a990cDaF09E8d3A9).
+
+### Testnet (chain 46630)
+
+| Contract | Source | Address |
+|---|---|---|
+| NearlNotes | [`contracts/NearlNotes.sol`](contracts/NearlNotes.sol) | [`0x99c972591a4Fb694dCe6aea07e597d0d16773AbE`](https://explorer.testnet.chain.robinhood.com/address/0x99c972591a4Fb694dCe6aea07e597d0d16773AbE) |
+| NearlGuardFactory | [`contracts/guard/NearlGuardFactory.sol`](contracts/guard/NearlGuardFactory.sol) | [`0xEBc3FAbd5C044b0Cae5D34dB1dc9A2cBA2f668E6`](https://explorer.testnet.chain.robinhood.com/address/0xEBc3FAbd5C044b0Cae5D34dB1dc9A2cBA2f668E6) |
+| MockUSD (tUSD, test token with faucet) | [`contracts/test/MockUSD.sol`](contracts/test/MockUSD.sol) | [`0xBC4433dcf2C04c6a5f2ebF435519682636261996`](https://explorer.testnet.chain.robinhood.com/address/0xBC4433dcf2C04c6a5f2ebF435519682636261996) |
+| MockPriceFeed (test ETH / USD) | [`contracts/test/MockPriceFeed.sol`](contracts/test/MockPriceFeed.sol) | [`0x45879E7a84de8b4C00e4222c4abb6a7F489564BF`](https://explorer.testnet.chain.robinhood.com/address/0x45879E7a84de8b4C00e4222c4abb6a7F489564BF) |
+
+The probe contracts in [`contracts/tools/`](contracts/tools) are never deployed. NEARL Check loads them into a simulated call (`eth_call` with state overrides) to test a buy, sell and transfer without spending anything.
 
 ## Repository
 

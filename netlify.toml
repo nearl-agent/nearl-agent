@@ -22,6 +22,26 @@
   node_bundler = "esbuild"
   included_files = ["web/rpc.js", "web/check-holders.js", "web/check.js", "web/probe-code.js", "web/v4-pools.js", "web/stock-tokens.js", "web/nearl-token.js", "web/logo.svg", "node_modules/@resvg/resvg-wasm/index_bg.wasm", "node_modules/@fontsource/inter/files/inter-latin-400-normal.woff", "node_modules/@fontsource/inter/files/inter-latin-600-normal.woff", "node_modules/@fontsource/inter/files/inter-latin-700-normal.woff", "node_modules/@fontsource/source-code-pro/files/source-code-pro-latin-500-normal.woff"]
 
+# Old Netlify address → nearlagent.com. The API and MCP keep answering on the old address too,
+# because agents may already use it and many clients do not follow redirects on POST.
+[[redirects]]
+  from = "https://funny-kataifi-fe49db.netlify.app/api/check"
+  to = "/.netlify/functions/check"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "https://funny-kataifi-fe49db.netlify.app/mcp"
+  to = "/.netlify/functions/mcp"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "https://funny-kataifi-fe49db.netlify.app/*"
+  to = "https://nearlagent.com/:splat"
+  status = 301
+  force = true
+
 [[redirects]]
   from = "/api/check"
   to = "/.netlify/functions/check"
