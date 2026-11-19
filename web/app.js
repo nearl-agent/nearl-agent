@@ -80,7 +80,6 @@
     signer: null,
     account: null,
     owner: null,
-    acknowledged: false,
     busy: false,
   };
   try { state.net = localStorage.getItem("nearl.net") === "mainnet" ? "mainnet" : "testnet"; } catch (_) {}
@@ -288,11 +287,7 @@
       const f = $("faucet");
       if (f) f.onclick = () => (state.account ? send("Faucet", () => writeToken().faucet()) : connect());
     } else {
-      b.innerHTML = `<div class="banner mainnet"><p><strong>Mainnet uses real money.</strong> These smart contracts have not been audited by an outside firm yet. They are verified on-chain, tested on a copy of mainnet and scanned with Slither and Mythril, with no real issues found. That lowers the risk but does not remove it: a bug could still cause losses, and pools lose value when the price ends below the safety line. Deposits are capped per wallet. <a href="contracts.html#security">How it was checked →</a></p><label><input type="checkbox" id="ack" ${state.acknowledged ? "checked" : ""}> I understand the risks</label></div>`;
-      $("ack").onchange = (e) => {
-        state.acknowledged = e.target.checked;
-        refresh();
-      };
+      b.innerHTML = ""; // mainnet: no banner (risks are on the Terms and Contracts pages)
     }
   }
 
@@ -421,7 +416,6 @@
         inp.id = `amt-${state.net}-${i}`;
         inp.setAttribute("aria-label", `Deposit amount for pool ${i}`);
         act.appendChild(inp);
-        const needAck = state.net === "mainnet" && !state.acknowledged;
         addBtn(paused ? "Joining paused" : "Join pool", "primary", async () => {
           if (!state.account) return connect();
           let amount;
@@ -436,14 +430,7 @@
             if (!ok) return;
           }
           await send("Join pool", () => writeNotes().deposit(i, amount));
-        }, paused || needAck);
-        if (needAck) {
-          const n = document.createElement("p");
-          n.className = "note";
-          n.style.margin = "0";
-          n.textContent = "Tick “I understand the risks” above to enable deposits.";
-          act.appendChild(n);
-        }
+        }, paused);
       }
 
       // Anyone can move the pool forward when a step is due.

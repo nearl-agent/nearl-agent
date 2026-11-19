@@ -28,6 +28,26 @@ NEARL offers **no credit or lending**. The contracts are **not audited**, so mai
 
 Contract addresses are listed below, in [`web/deployments/`](web/deployments), and on the website's [Contracts page](https://nearlagent.com/contracts.html). Mainnet contracts are verified on Sourcify and Blockscout; the inputs used are in [`verify/`](verify).
 
+## API & MCP for agents
+
+Both run as Netlify Functions from this repository. Free to use, limited to 20 requests per minute per IP, results cached for 2 minutes.
+
+| | Endpoint | Source |
+|---|---|---|
+| HTTP API | `GET https://nearlagent.com/api/check?token=0x...&net=mainnet` | [`netlify/functions/check.js`](netlify/functions/check.js) |
+| MCP server | `POST https://nearlagent.com/mcp`, tool `nearl_check_token` with `{ "token": "0x...", "network": "mainnet" }` | [`netlify/functions/mcp.js`](netlify/functions/mcp.js) |
+| Check engine (shared by both) | runs the same checks as the website | [`netlify/functions/lib/engine.js`](netlify/functions/lib/engine.js), [`web/check.js`](web/check.js) |
+| Rate limit and cache | | [`netlify/functions/lib/limits.js`](netlify/functions/lib/limits.js) |
+| Share links and card images | `/s` and `/og` | [`netlify/functions/share.js`](netlify/functions/share.js), [`netlify/functions/og.js`](netlify/functions/og.js) |
+
+Try it:
+
+```bash
+curl "https://nearlagent.com/api/check?token=0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168&net=mainnet"
+```
+
+The response includes `score` (0–100), `verdict`, `safeToBuy`, `buyTaxPct`, `sellTaxPct`, `liquidityUsd`, `upgradeable`, `owner` and `findings`. A ready-made agent skill is in [`web/skill.md`](web/skill.md).
+
 ## Deployed contracts
 
 The source of every deployed contract is in [`contracts/`](contracts). Addresses are also kept in [`web/deployments/`](web/deployments).

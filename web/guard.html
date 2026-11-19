@@ -5,6 +5,18 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>NEARL Guard</title>
 <meta name="description" content="Create a wallet your AI agent can use but cannot empty: daily caps, per-trade caps, approved recipients, owner-only withdrawals.">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="NEARL">
+<meta property="og:title" content="NEARL Guard">
+<meta property="og:description" content="Create a wallet your AI agent can use but cannot empty: daily caps, per-trade caps, approved recipients, owner-only withdrawals.">
+<meta property="og:url" content="https://nearlagent.com/guard.html">
+<meta property="og:image" content="https://nearlagent.com/og-card.png?v=1">
+<meta property="og:image:width" content="2400">
+<meta property="og:image:height" content="1260">
+<meta property="og:image:alt" content="NEARL: See who bundled it before you buy. Token checks and guarded wallets for onchain agents on Robinhood Chain.">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:site" content="@nearlagent">
+<meta name="twitter:image" content="https://nearlagent.com/og-card.png?v=1">
 <link rel="icon" href="favicon.svg?v=1" type="image/svg+xml">
 <link rel="alternate icon" href="logo-icon.png?v=1" type="image/png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -70,7 +82,6 @@ section{margin-top:16px}
     <h1>A wallet your agent can use but can't empty.</h1>
     <p>Create a Guard, fund it, and give your agent its own key. The agent can only spend within your daily and per-trade limits, only pay addresses you approve, and every withdrawal goes back to you.</p>
   </header>
-  <p class="warnbox" id="mainnet-warn" hidden style="margin:0 0 16px"><strong>Mainnet uses real money.</strong> Guard has not been audited by an outside firm yet. Its code is open and verified on-chain, its rules held through 24,000 random test actions without a single break, and two security scanners (Slither and Mythril) found no real issues. That lowers the risk but does not remove it: only put in amounts you can afford to lose and keep the agent's limits small. <a href="contracts.html#security" style="color:inherit;font-weight:600">How it was checked →</a></p>
 
   <div class="grid2">
     <section class="panel" style="margin:0">
@@ -269,7 +280,6 @@ section{margin-top:16px}
     $("net-mainnet").setAttribute("aria-pressed", key === "mainnet");
     $("netstatus").textContent = key === "mainnet" ? "Live · mainnet" : "Live · testnet";
     $("netstatus").className = "status " + (key === "mainnet" ? "live" : "test");
-    $("mainnet-warn").hidden = key !== "mainnet";
     selected = null;
     $("guards").innerHTML = `<div class="empty">Loading ${n.name}…</div>`;
     load().catch((e) => { console.error(e); $("guards").innerHTML = `<div class="empty">Could not reach ${n.name}. Refresh to try again.</div>`; });
