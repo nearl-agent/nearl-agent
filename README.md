@@ -11,7 +11,7 @@ Website: <https://nearlagent.com> · X: [@nearlagent](https://x.com/nearlagent)
 | Product | What it does | Status |
 |---|---|---|
 | **Check** | A 0–100 safety score for any token: simulated buy, sell and transfer, owner powers, upgradeable code, holders, first-block bundles and snipers, the creator's other launches, and official vs. copycat Robinhood stock tokens | Live on mainnet |
-| **Swap** | Swaps routed to Uniswap, with a NEARL check before every buy | Live on mainnet |
+| **Swap** | Swaps routed to Uniswap, with a NEARL check before every buy. No NEARL fee, no limit per swap | Live on mainnet |
 | **Guard** | Agent wallets with daily and per-transaction limits, an allowlist of destinations, pause, and withdrawals only to the owner | Live on mainnet and testnet |
 | **Earn** | "Stay Above" reward pools that pay out at each check while the ETH price stays above a safety line | Mainnet (one small pool) and testnet |
 | **API & MCP** | `GET /api/check` and an MCP server at `POST /mcp` (tool `nearl_check_token`) for agents | Live |
@@ -27,6 +27,17 @@ NEARL offers **no credit or lending**. The contracts are **not audited**, so mai
 | Explorer | <https://robinhoodchain.blockscout.com> | <https://explorer.testnet.chain.robinhood.com> |
 
 Contract addresses are listed below, in [`web/deployments/`](web/deployments), and on the website's [Contracts page](https://nearlagent.com/contracts.html). Mainnet contracts are verified on Sourcify and Blockscout; the inputs used are in [`verify/`](verify).
+
+## Swap
+
+[nearlagent.com/swap](https://nearlagent.com/swap) buys and sells any Robinhood Chain token with ETH or USDG. NEARL only routes the order: Uniswap's public contracts fill the trade, and the liquidity is Uniswap's.
+
+- **Check before every buy.** If the test sell fails (a possible honeypot), the buy is blocked. A score below 55 needs an extra confirmation.
+- **Best route** across Uniswap v3 and v4 pools, including Pons launch pools.
+- **You sign** every approval and swap in your own wallet. NEARL never holds funds.
+- **No NEARL fee and no limit per swap.** Slippage protection (0.5%, 1% or 3%) cancels the trade if the result would be below "min received".
+
+Source: [`web/swap.html`](web/swap.html) and [`web/swap.js`](web/swap.js).
 
 ## API & MCP for agents
 

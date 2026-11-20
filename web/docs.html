@@ -7,22 +7,25 @@
 <meta name="description" content="How NEARL works: Check, the API and MCP server, Guard, Earn, networks and limits.">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="NEARL">
-<meta property="og:title" content="NEARL Docs">
-<meta property="og:description" content="How NEARL works: Check, the API and MCP server, Guard, Earn, networks and limits.">
+<meta property="og:title" content="NEARL · See who bundled it before you buy">
+<meta property="og:description" content="Free token safety checks on Robinhood Chain: bundles, snipers, top holders and a test buy and sell, in seconds. Plus guarded wallets for AI agents.">
 <meta property="og:url" content="https://nearlagent.com/docs.html">
-<meta property="og:image" content="https://nearlagent.com/og-card.png?v=1">
+<meta property="og:image" content="https://nearlagent.com/og-card.png?v=2">
 <meta property="og:image:width" content="2400">
 <meta property="og:image:height" content="1260">
 <meta property="og:image:alt" content="NEARL: See who bundled it before you buy. Token checks and guarded wallets for onchain agents on Robinhood Chain.">
 <meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="NEARL · See who bundled it before you buy">
+<meta name="twitter:description" content="Free token safety checks on Robinhood Chain: bundles, snipers, top holders and a test buy and sell, in seconds. Plus guarded wallets for AI agents.">
 <meta name="twitter:site" content="@nearlagent">
-<meta name="twitter:image" content="https://nearlagent.com/og-card.png?v=1">
-<link rel="icon" href="favicon.svg?v=1" type="image/svg+xml">
-<link rel="alternate icon" href="logo-icon.png?v=1" type="image/png">
+<meta name="twitter:image" content="https://nearlagent.com/og-card.png?v=2">
+<link rel="icon" href="favicon.svg?v=2" type="image/svg+xml">
+<link rel="alternate icon" href="logo-icon.png?v=2" type="image/png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Source+Code+Pro:wght@400;500;600&display=swap">
-<link rel="stylesheet" href="theme.css?v=7">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap">
+<style>/* fallback if theme.css does not load */html,body{background:#050505;color:#F5F5F0}a{color:#FDFAC3}</style>
+<link rel="stylesheet" href="theme.css?v=13">
 </head>
 <body>
 <nav class="topnav">
@@ -48,6 +51,7 @@
       <span class="grp">Products</span>
       <a href="#check">Check</a>
       <a href="#scoring">How scoring works</a>
+      <a href="#swap">Swap</a>
       <a href="#guard">Guard</a>
       <a href="#earn">Earn</a>
       <span class="grp">Build</span>
@@ -71,7 +75,7 @@
           <tr><td><strong>Earn</strong></td><td>Reward pools that pay while a price stays above a safety line</td><td>Live on mainnet (one small pool) and testnet</td></tr>
         </tbody>
       </table></div>
-      <p>There is <strong>no NEARL token</strong>. Anyone selling one is not us.</p>
+      <p><strong>$NEARL</strong> launches on Pons, on Robinhood Chain. Its only official contract address is the one on the <a href="token.html">$NEARL page</a>. Any other token called NEARL is not ours, and NEARL never sends a contract address by DM. You do not need $NEARL to use Check, Swap, Guard or Earn.</p>
 
       <h2 id="networks">Networks</h2>
       <div class="tbl"><table>
@@ -135,6 +139,17 @@
       <p>If the sell could not be simulated, the score is capped at 70 (Be careful), except for well-known tokens such as USDG and WETH.</p>
       <div class="callout">A good score is not a guarantee. Automated checks can miss risks. Treat the score as one input.</div>
 
+      <h2 id="swap">Swap</h2>
+      <p><a href="swap.html">Swap</a> buys and sells any Robinhood Chain token with ETH or USDG. NEARL only routes the order: the trade is filled by Uniswap's public contracts, and the liquidity is Uniswap's.</p>
+      <ul>
+        <li><strong>Check before every buy.</strong> NEARL checks the token first. If the test sell fails (a possible honeypot), the buy is blocked. If the score is below 55, you must tick a box to confirm before you can buy.</li>
+        <li><strong>Best route.</strong> Quotes come from Uniswap v3 and v4 pools on Robinhood Chain, including Pons launch pools. The pool that pays the most is used.</li>
+        <li><strong>You sign.</strong> Every approval and swap is signed in your own wallet. NEARL never holds your funds.</li>
+        <li><strong>No NEARL fee</strong> and <strong>no limit per swap</strong>. Swap any amount.</li>
+        <li><strong>Slippage protection.</strong> Choose 0.5%, 1% or 3%. If the price moves more than that before the trade lands, it is cancelled and your funds stay in your wallet.</li>
+      </ul>
+      <div class="callout">Large swaps in small pools move the price. Read the "min received" amount before you sign.</div>
+
       <h2 id="guard">Guard</h2>
       <p>Guard is a smart-contract wallet for an AI agent. You (the owner) fund it and set the rules. The agent gets its own key and can only act inside those rules.</p>
       <ul>
@@ -174,7 +189,9 @@
   "safeToBuy": true,
   "buyTaxPct": 0,
   "sellTaxPct": 0,
-  "liquidityUsd": 17935827,
+  "liquidityUsd": 18642322,
+  "priceUsd": 1.0,
+  "marketCapUsd": 613105044,
   "upgradeable": true,
   "owner": "0xcFA0…4C6F",
   "findings": [{ "level": "bad", "title": "Owner can create new tokens (mint)", "detail": "…" }],
@@ -182,6 +199,7 @@
 }</code></pre>
       <ul>
         <li><code>net</code> is <code>mainnet</code> (default) or <code>testnet</code>.</li>
+        <li><code>priceUsd</code> is the spot price from the token's deepest pool or its Pons launch curve at check time, and <code>marketCapUsd</code> is that price times the supply minus burned tokens. Both are <code>null</code> when no pool or curve is found. Other sites can show slightly different numbers.</li>
         <li><code>safeToBuy</code> is true when the score is 55 or higher.</li>
         <li>Limit: 20 checks per minute per IP. Over the limit you get HTTP 429 with a <code>Retry-After</code> header.</li>
         <li>Results are cached for 2 minutes.</li>
@@ -219,7 +237,7 @@
       <h3>Why did a token I know is fine get "Be careful"?</h3>
       <p>Usually because the owner keeps powers such as minting or upgrades, or because the sell could not be simulated. Read the findings; they explain each point.</p>
       <h3>Is there a NEARL token or airdrop?</h3>
-      <p>No. There is no token and no airdrop.</p>
+      <p>There is a token, $NEARL, which launches on Pons. Get its contract address only from the <a href="token.html">$NEARL page</a>. There is no airdrop: anyone offering a NEARL airdrop, presale or "whitelist" is not us. $NEARL is not needed to use NEARL, and nothing here is investment advice.</p>
     </article>
   </div>
 </main>
@@ -227,5 +245,6 @@
 <footer id="site-footer"></footer>
 <script src="logo.js?v=2"></script>
 <script src="footer.js"></script>
+<script src="nav.js?v=1"></script>
 </body>
 </html>
