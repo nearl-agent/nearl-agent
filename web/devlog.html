@@ -7,22 +7,25 @@
 <meta name="description" content="What changed in NEARL, release by release.">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="NEARL">
-<meta property="og:title" content="NEARL Dev log">
-<meta property="og:description" content="What changed in NEARL, release by release.">
+<meta property="og:title" content="NEARL · See who bundled it before you buy">
+<meta property="og:description" content="Free token safety checks on Robinhood Chain: bundles, snipers, top holders and a test buy and sell, in seconds. Plus guarded wallets for AI agents.">
 <meta property="og:url" content="https://nearlagent.com/devlog.html">
-<meta property="og:image" content="https://nearlagent.com/og-card.png?v=1">
+<meta property="og:image" content="https://nearlagent.com/og-card.png?v=2">
 <meta property="og:image:width" content="2400">
 <meta property="og:image:height" content="1260">
 <meta property="og:image:alt" content="NEARL: See who bundled it before you buy. Token checks and guarded wallets for onchain agents on Robinhood Chain.">
 <meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="NEARL · See who bundled it before you buy">
+<meta name="twitter:description" content="Free token safety checks on Robinhood Chain: bundles, snipers, top holders and a test buy and sell, in seconds. Plus guarded wallets for AI agents.">
 <meta name="twitter:site" content="@nearlagent">
-<meta name="twitter:image" content="https://nearlagent.com/og-card.png?v=1">
-<link rel="icon" href="favicon.svg?v=1" type="image/svg+xml">
-<link rel="alternate icon" href="logo-icon.png?v=1" type="image/png">
+<meta name="twitter:image" content="https://nearlagent.com/og-card.png?v=2">
+<link rel="icon" href="favicon.svg?v=2" type="image/svg+xml">
+<link rel="alternate icon" href="logo-icon.png?v=2" type="image/png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Source+Code+Pro:wght@400;500;600&display=swap">
-<link rel="stylesheet" href="theme.css?v=7">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap">
+<style>/* fallback if theme.css does not load */html,body{background:#050505;color:#F5F5F0}a{color:#FDFAC3}</style>
+<link rel="stylesheet" href="theme.css?v=13">
 <style>
 /* Layout: a single timeline; each entry has a date, a version tag, a title and short bullets */
 .log{max-width:780px;margin-top:32px;border-left:1px solid var(--rule);padding-left:28px;display:grid;gap:36px}
@@ -51,6 +54,27 @@
   </header>
 
   <div class="log">
+    <article class="entry">
+      <div class="meta"><time datetime="2026-11-20">20 Nov 2026</time><span class="tag">v0.19</span></div>
+      <h2>nearlagent.com, the $NEARL page and a smarter radar</h2>
+      <ul>
+        <li>NEARL now lives at <strong>nearlagent.com</strong>. The old address forwards here, and the API and MCP keep working on both.</li>
+        <li>New <a href="token.html">$NEARL page</a>: the one place NEARL publishes the token's contract address. Check marks $NEARL as NEARL's own token and scores it by the same rules as every other token.</li>
+        <li>The radar on the homepage now runs a quick check on every new token and marks its red flags and warnings. Results are remembered in your browser for 30 minutes, so a return visit shows them at once.</li>
+        <li>The source code is public at <a href="https://github.com/nearl-agent/nearl-agent" target="_blank" rel="noopener">github.com/nearl-agent/nearl-agent</a>: contracts, tests, the website, the Check API and the MCP server.</li>
+        <li>New look: the NEARL mark in yellow across the site, and a link preview card for X, Telegram and Discord.</li>
+      </ul>
+    </article>
+
+    <article class="entry">
+      <div class="meta"><time datetime="2026-11-19">19 Nov 2026</time><span class="tag">v0.18</span></div>
+      <h2>NEARL Swap</h2>
+      <ul>
+        <li>New <a href="swap.html">Swap</a> page: buy and sell on Robinhood Chain through Uniswap, with a NEARL check before every buy. NEARL routes the order; the liquidity is Uniswap's.</li>
+        <li>Check finds Uniswap v4 pools directly, without scanning the chain's history, so new tokens are checked faster.</li>
+      </ul>
+    </article>
+
     <article class="entry">
       <div class="meta"><time datetime="2026-11-19">19 Nov 2026</time><span class="tag">v0.17</span></div>
       <h2>Real or copycat stock tokens</h2>
@@ -224,5 +248,6 @@
 <footer id="site-footer"></footer>
 <script src="logo.js?v=2"></script>
 <script src="footer.js"></script>
+<script src="nav.js?v=1"></script>
 </body>
 </html>
