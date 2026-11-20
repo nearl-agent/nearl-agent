@@ -7,22 +7,25 @@
 <meta name="description" content="Swap on Robinhood Chain through Uniswap, with a NEARL safety check before every buy. NEARL routes the order; liquidity comes from Uniswap.">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="NEARL">
-<meta property="og:title" content="NEARL Swap">
-<meta property="og:description" content="Swap on Robinhood Chain through Uniswap, with a NEARL safety check before every buy. NEARL routes the order; liquidity comes from Uniswap.">
+<meta property="og:title" content="NEARL · See who bundled it before you buy">
+<meta property="og:description" content="Free token safety checks on Robinhood Chain: bundles, snipers, top holders and a test buy and sell, in seconds. Plus guarded wallets for AI agents.">
 <meta property="og:url" content="https://nearlagent.com/swap.html">
-<meta property="og:image" content="https://nearlagent.com/og-card.png?v=1">
+<meta property="og:image" content="https://nearlagent.com/og-card.png?v=2">
 <meta property="og:image:width" content="2400">
 <meta property="og:image:height" content="1260">
 <meta property="og:image:alt" content="NEARL: See who bundled it before you buy. Token checks and guarded wallets for onchain agents on Robinhood Chain.">
 <meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="NEARL · See who bundled it before you buy">
+<meta name="twitter:description" content="Free token safety checks on Robinhood Chain: bundles, snipers, top holders and a test buy and sell, in seconds. Plus guarded wallets for AI agents.">
 <meta name="twitter:site" content="@nearlagent">
-<meta name="twitter:image" content="https://nearlagent.com/og-card.png?v=1">
-<link rel="icon" href="favicon.svg?v=1" type="image/svg+xml">
-<link rel="alternate icon" href="logo-icon.png?v=1" type="image/png">
+<meta name="twitter:image" content="https://nearlagent.com/og-card.png?v=2">
+<link rel="icon" href="favicon.svg?v=2" type="image/svg+xml">
+<link rel="alternate icon" href="logo-icon.png?v=2" type="image/png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Source+Code+Pro:wght@400;500;600&display=swap">
-<link rel="stylesheet" href="theme.css?v=7">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap">
+<style>/* fallback if theme.css does not load */html,body{background:#050505;color:#F5F5F0}a{color:#FDFAC3}</style>
+<link rel="stylesheet" href="theme.css?v=13">
 <style>
 /* Layout: a single swap card in the centre (pay → receive), the NEARL Check verdict under the token,
    route + minimum received, then the action button. A short "how it works" strip below. */
@@ -48,7 +51,7 @@
 .out small{font:500 14px var(--f-body);color:var(--ink-2)}
 .verdict{border-radius:12px;padding:10px 12px;font-size:14px;display:flex;gap:10px;align-items:flex-start}
 .verdict b{font-family:var(--f-mono)}
-.v-safe{background:var(--good-soft);color:var(--good)}.v-care{background:var(--warn-soft);color:var(--warn)}.v-bad{background:var(--bad-soft);color:var(--bad)}.v-wait{background:var(--surface-2,var(--surface));color:var(--ink-2)}
+.v-safe{background:var(--safe-soft);color:var(--safe)}.v-care{background:var(--warn-soft);color:var(--warn)}.v-bad{background:var(--bad-soft);color:var(--bad)}.v-wait{background:var(--surface-2,var(--surface));color:var(--ink-2)}
 .verdict a{color:inherit}
 .meta{display:grid;gap:6px;font-size:13.5px;color:var(--ink-2);padding:2px 4px}
 .meta div{display:flex;justify-content:space-between;gap:10px}
@@ -136,7 +139,7 @@
     <div><h3>2 · Uniswap fills</h3><p>Your order goes to the deepest Uniswap v3 or v4 pool on Robinhood Chain, including Pons launch pools.</p></div>
     <div><h3>3 · You sign</h3><p>Every approval and swap is signed in your own wallet. NEARL never holds your funds.</p></div>
   </section>
-  <p class="fine">Liquidity from Uniswap. NEARL is an interface that routes orders to Uniswap's public contracts on Robinhood Chain; it is not affiliated with Uniswap Labs. Swaps are capped while NEARL is new (0.05 ETH or 100 USDG per swap). Prices move; nothing here is investment advice.</p>
+  <p class="fine">Liquidity from Uniswap. NEARL is an interface that routes orders to Uniswap's public contracts on Robinhood Chain; it is not affiliated with Uniswap Labs. Prices move; nothing here is investment advice.</p>
 </main>
 
 <footer id="site-footer"></footer>
@@ -144,19 +147,19 @@
 <script src="rpc.js?v=6"></script>
 <script src="logo.js?v=2"></script>
 <script src="footer.js"></script>
+<script src="nav.js?v=1"></script>
 <script src="wallet.js"></script>
 <script src="probe-code.js?v=6"></script>
 <script src="v4-pools.js?v=1"></script>
-<script src="check-holders.js?v=1"></script>
+<script src="check-holders.js?v=2"></script>
 <script src="stock-tokens.js?v=1"></script>
-<script src="check.js?v=13"></script>
+<script src="check.js?v=17"></script>
 <script src="swap.js?v=1"></script>
 <script>
 (function(){
   "use strict";
   const { ethers } = window, S = NearlSwap, W = NearlWallet, $ = (id) => document.getElementById(id);
   const p = NearlRPC.provider(4663);
-  const CAP = { ETH: ethers.parseEther("0.05"), USDG: ethers.parseUnits("100", 6) };
   const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
   const st = { dir: "buy", base: "ETH", slip: 100n, token: null, meta: null, check: null, routes: [], amountIn: 0n, busy: false };
   const baseAddr = () => (st.base === "ETH" ? S.ETH : S.A.USDG);
@@ -243,11 +246,9 @@
     const risky = st.check && st.check.score < 55;
     $("ack-row").hidden = !(st.dir === "buy" && risky && !st.blocked);
     let label = "Swap", ok = true;
-    const cap = st.dir === "buy" ? CAP[st.base] : null;
     if (msg) { label = msg; ok = false; }
     else if (!st.token) { label = "Paste a token address"; ok = false; }
     else if (!(st.amountIn > 0n)) { label = "Enter an amount"; ok = false; }
-    else if (cap && st.amountIn > cap) { label = `Max ${st.base === "ETH" ? "0.05 ETH" : "100 USDG"} per swap for now`; ok = false; }
     else if (!best) { label = "No route"; ok = false; }
     else if (st.dir === "buy" && st.blocked) { label = "Blocked: possible honeypot"; ok = false; }
     else if (st.dir === "buy" && !st.check) { label = "Waiting for NEARL Check…"; ok = false; }
