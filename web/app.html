@@ -7,36 +7,37 @@
 <meta name="description" content="Deposit into NEARL structured note series on Robinhood Chain testnet or mainnet.">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="NEARL">
-<meta property="og:title" content="NEARL App">
-<meta property="og:description" content="Deposit into NEARL structured note series on Robinhood Chain testnet or mainnet.">
+<meta property="og:title" content="NEARL · See who bundled it before you buy">
+<meta property="og:description" content="Free token safety checks on Robinhood Chain: bundles, snipers, top holders and a test buy and sell, in seconds. Plus guarded wallets for AI agents.">
 <meta property="og:url" content="https://nearlagent.com/app.html">
-<meta property="og:image" content="https://nearlagent.com/og-card.png?v=1">
+<meta property="og:image" content="https://nearlagent.com/og-card.png?v=3">
 <meta property="og:image:width" content="2400">
 <meta property="og:image:height" content="1260">
 <meta property="og:image:alt" content="NEARL: See who bundled it before you buy. Token checks and guarded wallets for onchain agents on Robinhood Chain.">
 <meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="NEARL · See who bundled it before you buy">
+<meta name="twitter:description" content="Free token safety checks on Robinhood Chain: bundles, snipers, top holders and a test buy and sell, in seconds. Plus guarded wallets for AI agents.">
 <meta name="twitter:site" content="@nearlagent">
-<meta name="twitter:image" content="https://nearlagent.com/og-card.png?v=1">
-<link rel="icon" href="favicon.svg?v=1" type="image/svg+xml">
-<link rel="alternate icon" href="logo-icon.png?v=1" type="image/png">
+<meta name="twitter:image" content="https://nearlagent.com/og-card.png?v=3">
+<link rel="icon" href="favicon.svg?v=2" type="image/svg+xml">
+<link rel="alternate icon" href="logo-icon.png?v=2" type="image/png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Source+Code+Pro:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap">
 <style>
 /* Layout: sticky toolbar, network banner, then a responsive grid of note series cards */
 :root{
-  --paper:#E8ECEF; --surface:#F4F6F8; --ink:#121A24; --ink-2:#465363; --rule:#C3CBD4;
-  --cobalt:#2C46E8; --cobalt-soft:#D6DCFB; --on-cobalt:#FFFFFF;
-  --good:#1F7A4D; --warn:#A86A00; --bad:#B3261E; --warn-bg:#FBEFD9; --bad-bg:#F9E1DF;
-  --f-display:"Geist","Plain",-apple-system,"Segoe UI",system-ui,sans-serif;
-  --f-body:"Geist","Plain",-apple-system,"Segoe UI",system-ui,sans-serif;
-  --f-mono:"Source Code Pro",ui-monospace,Consolas,monospace;
-  color-scheme:light;
+  /* Same black and yellow palette as theme.css, so the page keeps its colours even if theme.css fails to load. */
+  --paper:#050505; --surface:#0E0E0C; --surface-2:#15140F; --ink:#F5F5F0; --ink-2:rgba(245,245,240,.58); --rule:rgba(253,250,195,.10);
+  --accent:#FDFAC3; --accent-ink:#0A0A08; --cobalt:#FDFAC3; --cobalt-soft:rgba(253,250,195,.12); --on-cobalt:#0A0A08;
+  --good:#FDFAC3; --good-soft:rgba(253,250,195,.12); --safe:#86E0A0; --safe-soft:rgba(134,224,160,.12);
+  --warn:#E8C468; --warn-soft:rgba(232,196,104,.14); --warn-bg:rgba(232,196,104,.14);
+  --bad:#FF7A6B; --bad-soft:rgba(255,122,107,.14); --bad-bg:rgba(255,122,107,.12);
+  --f-display:"Instrument Sans",-apple-system,"Segoe UI",system-ui,sans-serif;
+  --f-body:"Instrument Sans",-apple-system,"Segoe UI",system-ui,sans-serif;
+  --f-mono:"Geist Mono",ui-monospace,Consolas,monospace;
+  color-scheme:dark;
 }
-@media (prefers-color-scheme: dark){:root{
-  --paper:#0E1319; --surface:#18202A; --ink:#E6EBF1; --ink-2:#9AA7B6; --rule:#2A3542;
-  --cobalt:#8297FF; --cobalt-soft:#1E2A5C; --on-cobalt:#0B1020;
-  --good:#5CC48E; --warn:#E3A93F; --bad:#F07A70; --warn-bg:#2B2210; --bad-bg:#2E1614; color-scheme:dark}}
 *{box-sizing:border-box}
 html,body{margin:0}
 [hidden]{display:none!important}
@@ -125,7 +126,8 @@ footer p{margin:0;max-width:70ch}
 .schedwrap summary{cursor:pointer;font-size:13px;color:var(--ink-2)}
 .schedwrap .sched{margin-top:8px}
 </style>
-<link rel="stylesheet" href="theme.css?v=7">
+<style>/* fallback if theme.css does not load */html,body{background:#050505;color:#F5F5F0}a{color:#FDFAC3}</style>
+<link rel="stylesheet" href="theme.css?v=13">
 </head>
 <body>
 <nav class="topnav">
@@ -163,7 +165,8 @@ footer p{margin:0;max-width:70ch}
 <script src="rpc.js?v=6"></script>
 <script src="logo.js?v=2"></script>
 <script src="footer.js"></script>
+<script src="nav.js?v=1"></script>
 <script src="wallet.js"></script>
-<script src="app.js?v=9"></script>
+<script src="app.js?v=10"></script>
 </body>
 </html>

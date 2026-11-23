@@ -7,22 +7,25 @@
 <meta name="description" content="Create a wallet your AI agent can use but cannot empty: daily caps, per-trade caps, approved recipients, owner-only withdrawals.">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="NEARL">
-<meta property="og:title" content="NEARL Guard">
-<meta property="og:description" content="Create a wallet your AI agent can use but cannot empty: daily caps, per-trade caps, approved recipients, owner-only withdrawals.">
+<meta property="og:title" content="NEARL · See who bundled it before you buy">
+<meta property="og:description" content="Free token safety checks on Robinhood Chain: bundles, snipers, top holders and a test buy and sell, in seconds. Plus guarded wallets for AI agents.">
 <meta property="og:url" content="https://nearlagent.com/guard.html">
-<meta property="og:image" content="https://nearlagent.com/og-card.png?v=1">
+<meta property="og:image" content="https://nearlagent.com/og-card.png?v=3">
 <meta property="og:image:width" content="2400">
 <meta property="og:image:height" content="1260">
 <meta property="og:image:alt" content="NEARL: See who bundled it before you buy. Token checks and guarded wallets for onchain agents on Robinhood Chain.">
 <meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="NEARL · See who bundled it before you buy">
+<meta name="twitter:description" content="Free token safety checks on Robinhood Chain: bundles, snipers, top holders and a test buy and sell, in seconds. Plus guarded wallets for AI agents.">
 <meta name="twitter:site" content="@nearlagent">
-<meta name="twitter:image" content="https://nearlagent.com/og-card.png?v=1">
-<link rel="icon" href="favicon.svg?v=1" type="image/svg+xml">
-<link rel="alternate icon" href="logo-icon.png?v=1" type="image/png">
+<meta name="twitter:image" content="https://nearlagent.com/og-card.png?v=3">
+<link rel="icon" href="favicon.svg?v=2" type="image/svg+xml">
+<link rel="alternate icon" href="logo-icon.png?v=2" type="image/png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Source+Code+Pro:wght@400;500;600&display=swap">
-<link rel="stylesheet" href="theme.css?v=7">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap">
+<style>/* fallback if theme.css does not load */html,body{background:#050505;color:#F5F5F0}a{color:#FDFAC3}</style>
+<link rel="stylesheet" href="theme.css?v=13">
 <style>
 /* Layout: intro + create form, then one console per Guard: status, balances, limits, allowlists, activity */
 .head{padding-block:48px 24px;display:grid;gap:12px;max-width:760px}
@@ -116,13 +119,14 @@ section{margin-top:16px}
 <script src="rpc.js?v=6"></script>
 <script src="logo.js?v=2"></script>
 <script src="footer.js"></script>
+<script src="nav.js?v=1"></script>
 <script src="wallet.js"></script>
 <script src="txkit.js?v=4"></script>
 <script>
 (function(){
   "use strict";
   const { ethers } = window, T = NearlTx, W = NearlWallet, $ = (id) => document.getElementById(id), esc = T.esc;
-  const FACTORY_ABI = ["function createGuard(address agent) returns (address)", "function guardsOf(address) view returns (address[])", "event GuardCreated(address indexed owner, address indexed agent, address guard)"];
+  const FACTORY_ABI = ["function createGuard(address agent) returns (address)", "function guardsOf(address) view returns (address[])", "function guardCount() view returns (uint256)", "function allGuards(uint256) view returns (address)", "event GuardCreated(address indexed owner, address indexed agent, address guard)"];
   const GUARD_ABI = [
     "function owner() view returns (address)", "function agent() view returns (address)", "function paused() view returns (bool)",
     "function limits(address) view returns (uint128 daily, uint128 perTx)", "function spentToday(address) view returns (uint256)",
@@ -145,6 +149,21 @@ section{margin-top:16px}
   let SYM = "tUSD";
   const eth = (v) => Number(ethers.formatEther(v)).toLocaleString("en-US", { maximumFractionDigits: 5 });
 
+  async function guardsWhereAgent(f, account, skip) {
+    const me = account.toLowerCase(), out = [];
+    const count = Number(await f.guardCount());
+    for (let i = 0; i < count; i += 20) {
+      const batch = await Promise.all(Array.from({ length: Math.min(20, count - i) }, async (_, k) => {
+        const g = await f.allGuards(i + k).catch(() => null);
+        if (!g || skip.includes(g)) return null;
+        const a = await new ethers.Contract(g, GUARD_ABI, T.read).agent().catch(() => null);
+        return a && a.toLowerCase() === me ? g : null;
+      }));
+      out.push(...batch.filter(Boolean));
+    }
+    return out.reverse();
+  }
+
   async function load() {
     dep = await T.deployment();
     SYM = dep.assetSymbol || "tUSD";
@@ -152,9 +171,9 @@ section{margin-top:16px}
     if (!W.account) { $("guards").innerHTML = '<div class="empty">Connect your wallet to see your Guards.</div>'; $("tabs").innerHTML = ""; return; }
     const f = new ethers.Contract(dep.guardFactory, FACTORY_ABI, T.read);
     guards = [...(await f.guardsOf(W.account))].reverse();
-    // Also show Guards where this wallet is the agent
-    const agentOf = await T.getLogsChunked({ address: dep.guardFactory, topics: [new ethers.Interface(FACTORY_ABI).getEvent("GuardCreated").topicHash, null, ethers.zeroPadValue(W.account, 32)] }, dep.guardStartBlock);
-    const asAgent = agentOf.map((l) => ethers.getAddress("0x" + l.data.slice(-40))).filter((g) => !guards.includes(g));
+    // Also show Guards where this wallet is the agent now. Read each Guard's agent() directly instead of searching
+    // event logs: public RPCs often refuse log searches, and logs would miss a Guard whose agent was changed later.
+    const asAgent = await guardsWhereAgent(f, W.account, guards);
     const all = guards.map((g) => ({ g, role: "owner" })).concat(asAgent.map((g) => ({ g, role: "agent" })));
     if (!all.length) { $("tabs").innerHTML = ""; $("guards").innerHTML = '<div class="empty">No Guards yet. Create one above.</div>'; return; }
     if (!selected || !all.some((x) => x.g === selected)) selected = all[0].g;
@@ -170,7 +189,7 @@ section{margin-top:16px}
     const [agent, paused, lu, le, su, se, bu, be] = await Promise.all([
       g.agent(), g.paused(), g.limits(dep.asset), g.limits(ETH), g.spentToday(dep.asset), g.spentToday(ETH), usd.balanceOf(addr), T.read.getBalance(addr),
     ]);
-    const logs = await T.getLogsChunked({ address: addr }, dep.guardStartBlock);
+    const logs = await T.getLogsChunked({ address: addr }, dep.guardStartBlock).catch(() => []); // a refused log search only empties the activity list
     const recips = new Map(), targets = new Map(), events = [];
     for (const l of logs) {
       let ev; try { ev = gIface.parseLog(l); } catch (_) { continue; }

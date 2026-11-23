@@ -7,22 +7,25 @@
 <meta name="description" content="Live NEARL numbers read straight from Robinhood Chain: pools, deposits and Guard wallets.">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="NEARL">
-<meta property="og:title" content="NEARL Stats">
-<meta property="og:description" content="Live NEARL numbers read straight from Robinhood Chain: pools, deposits and Guard wallets.">
+<meta property="og:title" content="NEARL · See who bundled it before you buy">
+<meta property="og:description" content="Free token safety checks on Robinhood Chain: bundles, snipers, top holders and a test buy and sell, in seconds. Plus guarded wallets for AI agents.">
 <meta property="og:url" content="https://nearlagent.com/stats.html">
-<meta property="og:image" content="https://nearlagent.com/og-card.png?v=1">
+<meta property="og:image" content="https://nearlagent.com/og-card.png?v=3">
 <meta property="og:image:width" content="2400">
 <meta property="og:image:height" content="1260">
 <meta property="og:image:alt" content="NEARL: See who bundled it before you buy. Token checks and guarded wallets for onchain agents on Robinhood Chain.">
 <meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="NEARL · See who bundled it before you buy">
+<meta name="twitter:description" content="Free token safety checks on Robinhood Chain: bundles, snipers, top holders and a test buy and sell, in seconds. Plus guarded wallets for AI agents.">
 <meta name="twitter:site" content="@nearlagent">
-<meta name="twitter:image" content="https://nearlagent.com/og-card.png?v=1">
-<link rel="icon" href="favicon.svg?v=1" type="image/svg+xml">
-<link rel="alternate icon" href="logo-icon.png?v=1" type="image/png">
+<meta name="twitter:image" content="https://nearlagent.com/og-card.png?v=3">
+<link rel="icon" href="favicon.svg?v=2" type="image/svg+xml">
+<link rel="alternate icon" href="logo-icon.png?v=2" type="image/png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Source+Code+Pro:wght@400;500;600&display=swap">
-<link rel="stylesheet" href="theme.css?v=7">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap">
+<style>/* fallback if theme.css does not load */html,body{background:#050505;color:#F5F5F0}a{color:#FDFAC3}</style>
+<link rel="stylesheet" href="theme.css?v=13">
 <style>
 /* Layout: grouped stat tiles per product; every number is read live from the chain */
 .grp{margin-top:32px}
@@ -48,8 +51,18 @@
   <header class="page-head">
     <span class="eyebrow">Stats</span>
     <h1 style="margin-top:10px">NEARL in numbers</h1>
-    <p>Read live from Robinhood Chain every time you open this page. Nothing here is typed in by hand.</p>
+    <p>Read live from Robinhood Chain every time you open this page. Nothing here is typed in by hand. Checks run is counted by NEARL's own server, since checks happen off-chain.</p>
   </header>
+
+  <div class="grp">
+    <h2>Mainnet <span class="status live">live</span></h2>
+    <div class="tiles">
+      <div class="tile"><span>Checks run</span><b id="c-total">—</b><small id="c-split">website, API and MCP</small></div>
+      <div class="tile"><span>Earn pools</span><b id="m-pools">—</b><small>with real USDG</small></div>
+      <div class="tile"><span>Deposited</span><b id="m-dep">—</b><small>USDG in pools</small></div>
+      <div class="tile"><span>Guard wallets</span><b id="m-guards">—</b><small>on mainnet</small></div>
+    </div>
+  </div>
 
   <div class="grp">
     <h2>Earn <span class="status test">testnet</span></h2>
@@ -68,14 +81,6 @@
     </div>
   </div>
 
-  <div class="grp">
-    <h2>Mainnet <span class="status live">live</span></h2>
-    <div class="tiles">
-      <div class="tile"><span>Earn pools</span><b id="m-pools">—</b><small>with real USDG</small></div>
-      <div class="tile"><span>Deposited</span><b id="m-dep">—</b><small>USDG in pools</small></div>
-      <div class="tile"><span>Guard wallets</span><b id="m-guards">—</b><small>on mainnet</small></div>
-    </div>
-  </div>
   <p class="upd" id="upd">Reading the chain…</p>
 </main>
 
@@ -84,6 +89,7 @@
 <script src="rpc.js?v=6"></script>
 <script src="logo.js?v=2"></script>
 <script src="footer.js"></script>
+<script src="nav.js?v=1"></script>
 <script src="nearl.js?v=2"></script>
 <script>
 (function(){
@@ -106,16 +112,26 @@
     set("g-count", n(await f.guardCount()));
   }
   async function mainnet() {
-    const { dep, pools } = await Nearl.pools("mainnet");
+    const { pools } = await Nearl.pools("mainnet");
     set("m-pools", n(pools.length));
     set("m-dep", n(pools.reduce((a, p) => a + p.filled, 0), 2));
-    if (dep && dep.guardFactory) {
-      const f = new ethers.Contract(dep.guardFactory, ["function guardCount() view returns (uint256)"], Nearl.provider("mainnet"));
-      set("m-guards", n(await f.guardCount()));
-    }
+  }
+  // Read on its own, so a slow pool read never leaves this tile empty.
+  async function mainnetGuards() {
+    const dep = await Nearl.deployment("mainnet");
+    if (!dep || !dep.guardFactory) { set("m-guards", "0"); return; }
+    const f = new ethers.Contract(dep.guardFactory, ["function guardCount() view returns (uint256)"], Nearl.provider("mainnet"));
+    set("m-guards", n(await f.guardCount()));
+  }
+  async function checks() {
+    const r = await fetch("/api/count", { cache: "no-store" });
+    if (!r.ok) throw new Error("count " + r.status);
+    const c = await r.json();
+    set("c-total", n(c.total));
+    set("c-split", `website ${n(c.web)} · API ${n(c.api)} · MCP ${n(c.mcp)}`);
   }
 
-  Promise.allSettled([earn(), guard(), mainnet()]).then((r) => {
+  Promise.allSettled([checks(), mainnet(), mainnetGuards(), earn(), guard()]).then((r) => {
     const failed = r.filter((x) => x.status === "rejected").length;
     set("upd", failed ? `Some numbers could not be read (${failed}). Refresh to try again.` : `Updated ${new Date().toLocaleTimeString()}.`);
   });
