@@ -143,6 +143,13 @@
     }
 
     // ---- launch: snipers and bundle wallets
+    // What matters is how much these wallets STILL hold: they can sell it all at once on later buyers.
+    // The three findings below can overlap (a first-block bundler is also an early sniper), so together
+    // they take at most 40 points; the combined share they still hold also caps the score in check.js.
+    const insiders = new Set();
+    let launchBudget = 40;
+    const launchPen = (n) => { const x = Math.min(n, launchBudget); launchBudget -= x; return x; };
+    const heldPct = (wallets) => pctOf(Array.from(wallets).reduce((s, a) => s + ((bal.get(a) || 0n) > 0n ? bal.get(a) : 0n), 0n), supply);
     if (holdersOk && logs.length) {
       step("Looking at the first seconds of trading…");
       const sources = new Set([...(ctx.pons ? [lc(ctx.pons.curve)] : []), ...((ctx.pools || []).map(lc)), POOL_MANAGER]);
@@ -177,14 +184,17 @@
           const fbStill = pctOf(Array.from(firstBlock.keys()).reduce((s, a) => s + ((bal.get(a) || 0n) > 0n ? bal.get(a) : 0n), 0n), supply);
           info.launch.firstBlockBuyers = firstBlock.size;
           info.launch.firstBlockPct = fbPct;
-          add(fbStill >= 5 ? "warn" : "info", `Bundled start: ${firstBlock.size} wallets bought ${fmtPct(fbPct)} in the first block`, `Right as trading opened, ${firstBlock.size} wallets bought ${fmtPct(fbPct)} of the supply in the same moment, a pattern typical of one person using several wallets. They hold ${fmtPct(fbStill)} now.`, fbStill >= 5 ? (fbStill > 15 ? 10 : 6) : 0);
+          for (const a of firstBlock.keys()) insiders.add(a);
+          const fbLevel = fbStill > 15 ? "bad" : fbStill >= 5 ? "warn" : "info";
+          add(fbLevel, `Bundled start: ${firstBlock.size} wallets bought ${fmtPct(fbPct)} in the first block`, `Right as trading opened, ${firstBlock.size} wallets bought ${fmtPct(fbPct)} of the supply in the same moment, a pattern typical of one person using several wallets. They still hold ${fmtPct(fbStill)}${fbStill > 15 ? " and could dump it on later buyers at any time" : ""}.`, launchPen(fbStill > 30 ? 35 : fbStill > 15 ? 20 : fbStill >= 5 ? 10 : 0));
         }
         info.launch.earlyBuyers = early.size;
         info.launch.earlyBoughtPct = boughtPct;
         info.launch.earlyStillPct = stillPct;
+        if (others.length >= 3 && boughtPct >= 10) for (const a of others) insiders.add(a);
         if (others.length >= 3 && boughtPct >= 10 && stillPct >= 5) {
           const bad = stillPct > 20;
-          add(bad ? "bad" : "warn", `Sniped at launch: ${early.size} wallets took ${fmtPct(boughtPct)}`, `In the first ${EARLY_SECONDS} seconds of trading, ${early.size} wallets picked up ${fmtPct(boughtPct)} of the supply. Together they still hold ${fmtPct(stillPct)} and could sell it on later buyers.`, bad ? 12 : 6);
+          add(bad ? "bad" : "warn", `Sniped at launch: ${early.size} wallets took ${fmtPct(boughtPct)}`, `In the first ${EARLY_SECONDS} seconds of trading, ${early.size} wallets picked up ${fmtPct(boughtPct)} of the supply. Together they still hold ${fmtPct(stillPct)} and could sell it on later buyers.`, launchPen(stillPct > 35 ? 30 : bad ? 20 : 8));
         } else if (others.length >= 3 && boughtPct >= 10) {
           add("info", "Launch snipers have sold", `${early.size} wallets picked up ${fmtPct(boughtPct)} in the first ${EARLY_SECONDS} seconds, but they now hold only ${fmtPct(stillPct)}.`);
         } else if (early.size) {
@@ -201,10 +211,13 @@
           if (bundle.length) {
             const holdPct = pctOf(bundle.reduce((s, a) => s + ((bal.get(a) || 0n) > 0n ? bal.get(a) : 0n), 0n), supply);
             info.launch.bundleStillPct = holdPct;
-            add(holdPct > 5 ? "warn" : "info", `Creator set up ${bundle.length} bundle wallet${bundle.length === 1 ? "" : "s"}`, `At launch the creator named ${bundle.length} extra wallet${bundle.length === 1 ? "" : "s"} that could buy without the snipe tax. They hold ${fmtPct(holdPct)} now.`, holdPct > 5 ? 8 : 0);
+            for (const a of bundle) insiders.add(a);
+            add(holdPct > 15 ? "bad" : holdPct > 5 ? "warn" : "info", `Creator set up ${bundle.length} bundle wallet${bundle.length === 1 ? "" : "s"}`, `At launch the creator named ${bundle.length} extra wallet${bundle.length === 1 ? "" : "s"} that could buy without the snipe tax. They hold ${fmtPct(holdPct)} now.`, launchPen(holdPct > 15 ? 25 : holdPct > 5 ? 10 : 0));
           }
         }
       }
+      insiders.delete(creator); // the creator's own wallet has its own finding
+      if (insiders.size && info.launch) info.launch.insiderStillPct = heldPct(insiders);
     }
 
     // ---- creator history on Pons

@@ -6,8 +6,9 @@
   "couponBps": 100,
   "maxPriceAgeSeconds": 10800,
   "subscriptionHours": 72,
+  "subscriptionEndISO": "2026-11-30T23:59:00+07:00",
   "observationIntervalDays": 7,
   "observations": 3,
   "perUserCap": 10,
-  "totalCap": 100
+  "totalCap": 30
 }

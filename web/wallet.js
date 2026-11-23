@@ -101,21 +101,21 @@
     const s = document.createElement("style");
     s.id = "nw-style";
     s.textContent = `
-      .nw-dialog{border:1px solid var(--rule,#C3CBD4);border-radius:16px;padding:0;width:min(420px,calc(100% - 32px));
-        background:var(--surface,#F4F6F8);color:var(--ink,#121A24);font-family:var(--f-body,system-ui,sans-serif)}
-      .nw-dialog::backdrop{background:rgba(10,14,20,.55)}
-      .nw-head{display:flex;justify-content:space-between;align-items:center;padding:18px 20px;border-bottom:1px solid var(--rule,#C3CBD4)}
+      .nw-dialog{border:1px solid var(--rule,rgba(253,250,195,.10));border-radius:16px;padding:0;width:min(420px,calc(100% - 32px));
+        background:var(--surface,#0E0E0C);color:var(--ink,#F5F5F0);font-family:var(--f-body,system-ui,sans-serif)}
+      .nw-dialog::backdrop{background:rgba(0,0,0,.6)}
+      .nw-head{display:flex;justify-content:space-between;align-items:center;padding:18px 20px;border-bottom:1px solid var(--rule,rgba(253,250,195,.10))}
       .nw-head h2{margin:0;font:800 20px var(--f-display,system-ui,sans-serif);letter-spacing:-.02em}
       .nw-x{border:0;background:transparent;color:inherit;font-size:22px;line-height:1;cursor:pointer;padding:4px 8px;border-radius:8px}
       .nw-body{padding:12px;display:grid;gap:8px}
-      .nw-w{display:flex;align-items:center;gap:12px;width:100%;padding:12px 14px;border:1px solid var(--rule,#C3CBD4);border-radius:12px;
-        background:var(--paper,#E8ECEF);color:inherit;font:600 15px var(--f-body,system-ui,sans-serif);cursor:pointer;text-align:left}
-      .nw-w:hover{border-color:var(--cobalt,#2C46E8)}
+      .nw-w{display:flex;align-items:center;gap:12px;width:100%;padding:12px 14px;border:1px solid var(--rule,rgba(253,250,195,.10));border-radius:12px;
+        background:var(--paper,#050505);color:inherit;font:600 15px var(--f-body,system-ui,sans-serif);cursor:pointer;text-align:left}
+      .nw-w:hover{border-color:var(--cobalt,#FDFAC3)}
       .nw-w img,.nw-w .nw-ph{width:32px;height:32px;border-radius:8px;flex:none}
-      .nw-w .nw-ph{background:var(--rule,#C3CBD4)}
-      .nw-w small{display:block;font:400 12px var(--f-mono,monospace);color:var(--ink-2,#465363)}
-      .nw-note{margin:0;padding:4px 8px 8px;font-size:13px;color:var(--ink-2,#465363);line-height:1.5}
-      .nw-note a{color:var(--cobalt,#2C46E8)}
+      .nw-w .nw-ph{background:var(--rule,rgba(253,250,195,.10))}
+      .nw-w small{display:block;font:400 12px var(--f-mono,monospace);color:var(--ink-2,rgba(245,245,240,.58))}
+      .nw-note{margin:0;padding:4px 8px 8px;font-size:13px;color:var(--ink-2,rgba(245,245,240,.58));line-height:1.5}
+      .nw-note a{color:var(--cobalt,#FDFAC3)}
       .nw-err{margin:0 8px 8px;padding:10px 12px;border-radius:10px;background:var(--bad-bg,#F9E1DF);color:var(--bad,#B3261E);font-size:13px}
     `;
     document.head.appendChild(s);

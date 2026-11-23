@@ -1,7 +1,7 @@
 // NEARL MCP server (Streamable HTTP, stateless, JSON responses) at POST /mcp
 // Tool: nearl_check_token: safety score for a Robinhood Chain token before buying it.
 const { runCheck } = require("./lib/engine");
-const { rateLimit, cached, LIMIT_PER_MIN } = require("./lib/limits");
+const { rateLimit, cached, LIMIT_PER_MIN, bump } = require("./lib/limits");
 
 const HEADERS = {
   "Content-Type": "application/json; charset=utf-8",
@@ -59,6 +59,7 @@ async function handle(msg, event) {
       try {
         const net = params?.arguments?.network === "testnet" ? "testnet" : "mainnet";
         const r = await cached(event, `${net}/${String(params?.arguments?.token || "").slice(0, 64)}`, () => runCheck(params?.arguments?.token, net));
+        await bump(event, "mcp");
         const top = r.findings.filter((f) => f.level === "bad" || f.level === "warn").slice(0, 4).map((f) => `- ${f.title}`).join("\n");
         const text = `${r.name} (${r.symbol}) on ${r.network}: score ${r.score}/100, ${r.verdict}. ` +
           `Buy tax ${r.buyTaxPct == null ? "not tested" : r.buyTaxPct + "%"}, sell tax ${r.sellTaxPct == null ? "not tested" : r.sellTaxPct + "%"}, liquidity ${r.liquidityUsd ? "$" + Math.round(r.liquidityUsd) : "n/a"}.` +

@@ -34,7 +34,7 @@ exports.handler = async (event) => {
 <meta name="twitter:image" content="${esc(img)}">
 <meta http-equiv="refresh" content="0; url=${esc(live)}">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
-<style>body{background:#000F06;color:#F6F6F6;font:16px system-ui,sans-serif;display:grid;place-items:center;min-height:100vh;margin:0}a{color:#FDFAC3}</style>
+<style>body{background:#050505;color:#F5F5F0;font:16px system-ui,sans-serif;display:grid;place-items:center;min-height:100vh;margin:0}a{color:#FDFAC3}</style>
 </head><body><p>Opening the live NEARL check of ${esc(snap.symbol)}… <a href="${esc(live)}">Continue</a></p>
 <script>location.replace(${JSON.stringify(live)})</script>
 </body></html>`;

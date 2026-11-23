@@ -303,7 +303,8 @@
     const open = series.filter((s) => Number(s.status) <= 1).length;
     const sym = esc(state.dep.assetSymbol);
     $("stats").innerHTML =
-      `<div><span class="label">Total deposits</span><b>${fmtAmt(tvl)} ${sym}</b></div>` +
+      // Hidden while nothing is deposited yet: a new pool is waiting for its first member, not empty for good.
+      (tvl > 0n ? `<div><span class="label">Total deposits</span><b>${fmtAmt(tvl)} ${sym}</b></div>` : "") +
       `<div><span class="label">Open pools</span><b>${open}</b></div>` +
       (state.account ? `<div><span class="label">Your balance</span><b>${fmtAmt(balance)} ${sym}</b></div>` : "") +
       (paused ? `<div><span class="label">Deposits</span><b style="color:var(--bad)">Paused</b></div>` : "");
@@ -368,8 +369,10 @@
           <div><span class="label">Early win</span><b>${winHtml}</b></div>
         </div>
         <div>
-          <div class="row"><span>Filled ${fmtAmt(s.totalDeposits)} of ${fmtAmt(s.totalCap)} ${sym}</span><span>Max ${fmtAmt(s.perUserCap)} per wallet</span></div>
-          <div class="bar" style="margin-top:6px"><i style="width:${Math.min(100, fill)}%"></i></div>
+          ${s.totalDeposits === 0n && Number(s.status) <= 1
+            ? `<div class="row"><span><b style="color:var(--accent)">New pool</b> · be the first to join · room for ${fmtAmt(s.totalCap)} ${sym}</span><span>Max ${fmtAmt(s.perUserCap)} per wallet</span></div>`
+            : `<div class="row"><span>Filled ${fmtAmt(s.totalDeposits)} of ${fmtAmt(s.totalCap)} ${sym}</span><span>Max ${fmtAmt(s.perUserCap)} per wallet</span></div>
+          <div class="bar" style="margin-top:6px"><i style="width:${Math.min(100, fill)}%"></i></div>`}
         </div>
         ${dueText ? `<p class="due">⏱ ${dueText}</p>` : ""}
         <details class="schedwrap"><summary>Schedule (${paid} of ${obs.length} rewards paid)</summary>

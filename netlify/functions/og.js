@@ -29,7 +29,9 @@ function init() {
   return ready;
 }
 
-const C = { paper: "#000F06", surface: "#0B1712", ink: "#F6F6F6", ink2: "#9aa29d", rule: "#1d2a24", accent: "#FDFAC3", good: "#7FC8A0", ok: "#7FC8A0", warn: "#E8C468", bad: "#FF8A7E", info: "#9AA8FF" };
+// The site palette: black, NEARL yellow, a little white. The score is green when safe (80+),
+// yellow when careful (55-79) and red below that.
+const C = { paper: "#050505", surface: "#0E0E0C", ink: "#F5F5F0", ink2: "#9A988C", rule: "#24231C", accent: "#FDFAC3", good: "#86E0A0", ok: "#FDFAC3", warn: "#E8C468", bad: "#FF7A6B", info: "#F5F5F0" };
 const h = (type, style, ...children) => ({ type, props: { style: { display: "flex", ...style }, children: children.flat().filter((c) => c !== null && c !== false) } });
 const uri = (svg) => "data:image/svg+xml;base64," + Buffer.from(svg).toString("base64");
 
@@ -42,7 +44,7 @@ function logo() {
 function ring(score, color) {
   const r = 104, c = 2 * Math.PI * r, dash = (score / 100) * c;
   return uri(`<svg xmlns="http://www.w3.org/2000/svg" width="260" height="260" viewBox="0 0 260 260">
-    <circle cx="130" cy="130" r="${r}" fill="none" stroke="rgba(255,255,255,.1)" stroke-width="20"/>
+    <circle cx="130" cy="130" r="${r}" fill="none" stroke="rgba(253,250,195,.12)" stroke-width="20"/>
     <circle cx="130" cy="130" r="${r}" fill="none" stroke="${color}" stroke-width="20" stroke-linecap="round" stroke-dasharray="${dash} ${c}" transform="rotate(-90 130 130)"/></svg>`);
 }
 
@@ -72,7 +74,7 @@ function card(snap, host) {
           snap.findings.map((f) => h("div", { alignItems: "center", gap: 14, fontSize: 25 },
             h("div", { width: 16, height: 16, borderRadius: 8, background: C[f.level], flexShrink: 0 }),
             h("div", { color: C.ink }, f.title)))))),
-    h("div", { position: "absolute", left: 64, right: 64, bottom: 40, height: 56, justifyContent: "space-between", alignItems: "flex-end", fontSize: 21, color: C.ink2, borderTop: "1px solid #1d2a24" },
+    h("div", { position: "absolute", left: 64, right: 64, bottom: 40, height: 56, justifyContent: "space-between", alignItems: "flex-end", fontSize: 21, color: C.ink2, borderTop: `1px solid ${C.rule}` },
       h("div", {}, when ? `Checked ${when}` : "NEARL Check"),
       h("div", { fontFamily: "Mono", whiteSpace: "nowrap" }, host)));
 }

@@ -1,17 +1,19 @@
 /* NEARL shared theme: one dark look for every page, the shared top navigation, buttons and status pills.
    Loaded after each page's own <style>, so these tokens win.
-   Palette and type follow the requested reference: deep forest-black ground, soft white text,
-   cream primary actions, sage-green highlights, a clean grotesk at weight 500 and Source Code Pro. */
+   Palette: black ground, the NEARL yellow for highlights and actions, a little white for text.
+   Red is kept only for danger warnings. Type: Instrument Sans and Geist Mono. */
 :root{
   --logo-mask:url(logo.svg?v=2); --logo-ar:1.308;
-  --paper:#000F06; --surface:#0B1712; --surface-2:#0A2513; --ink:#F6F6F6; --ink-2:rgba(255,255,255,.6); --rule:rgba(255,255,255,.08);
-  --accent:#FDFAC3; --accent-ink:#0D100F; --sage:#60917E; --sage-soft:rgba(96,145,126,.25);
-  --cobalt:#FDFAC3; --cobalt-soft:rgba(253,250,195,.12); --on-cobalt:#0D100F;
-  --good:#7FC8A0; --good-soft:rgba(96,145,126,.22); --warn:#E8C468; --warn-soft:rgba(232,196,104,.14); --warn-bg:rgba(232,196,104,.14);
-  --bad:#FF8A7E; --bad-soft:rgba(255,138,126,.14); --bad-bg:rgba(255,138,126,.14); --gold:#E8C468; --gold-soft:rgba(232,196,104,.14);
-  --f-display:"Geist","Plain",-apple-system,"Segoe UI",system-ui,sans-serif;
-  --f-body:"Geist","Plain",-apple-system,"Segoe UI",system-ui,sans-serif;
-  --f-mono:"Source Code Pro",ui-monospace,Consolas,monospace;
+  --paper:#050505; --surface:#0E0E0C; --surface-2:#15140F; --ink:#F5F5F0; --ink-2:rgba(245,245,240,.58); --rule:rgba(253,250,195,.10);
+  --accent:#FDFAC3; --accent-ink:#0A0A08; --sage:#FDFAC3; --sage-soft:rgba(253,250,195,.07);
+  --cobalt:#FDFAC3; --cobalt-soft:rgba(253,250,195,.12); --on-cobalt:#0A0A08;
+  --good:#FDFAC3; --good-soft:rgba(253,250,195,.12); --warn:#E8C468; --warn-soft:rgba(232,196,104,.14); --warn-bg:rgba(232,196,104,.14);
+  --bad:#FF7A6B; --bad-soft:rgba(255,122,107,.14); --bad-bg:rgba(255,122,107,.12); --gold:#E8C468; --gold-soft:rgba(232,196,104,.14);
+  --info:#F5F5F0;
+  --safe:#86E0A0; --safe-soft:rgba(134,224,160,.12); /* only for a safe score (80-100) */
+  --f-display:"Instrument Sans",-apple-system,"Segoe UI",system-ui,sans-serif;
+  --f-body:"Instrument Sans",-apple-system,"Segoe UI",system-ui,sans-serif;
+  --f-mono:"Geist Mono",ui-monospace,Consolas,monospace;
   color-scheme:dark;
 }
 /* Headings: medium weight with tight tracking, as in the reference. */
@@ -55,7 +57,8 @@ a{color:inherit}
 .topnav .links a[aria-current]{color:var(--ink);background:var(--surface)}
 #wallet-btn.on{font:500 13px var(--f-mono)}
 @media (max-width:900px){.topnav .links{order:5;width:100%;overflow-x:auto}}
-@media (max-width:480px){#wallet-btn:not(.on){display:none}}
+@media (max-width:520px){.topnav .links{justify-content:space-between;gap:0;overflow-x:visible}.topnav .links a{padding:6px 7px;font-size:13.5px}}
+
 
 .foot{margin-top:56px;padding-block:28px 40px;border-top:1px solid var(--rule);display:flex;flex-wrap:wrap;gap:16px;justify-content:space-between;color:var(--ink-2);font-size:13.5px}
 .foot p{max-width:70ch}

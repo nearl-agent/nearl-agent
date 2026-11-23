@@ -48,6 +48,11 @@
   status = 200
 
 [[redirects]]
+  from = "/api/count"
+  to = "/.netlify/functions/count"
+  status = 200
+
+[[redirects]]
   from = "/mcp"
   to = "/.netlify/functions/mcp"
   status = 200

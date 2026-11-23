@@ -66,6 +66,7 @@
     "function feeBps() view returns (uint256)", "function creatorTaxBps() view returns (uint256)",
     "function realQuoteReserve() view returns (uint256)", "function graduationThreshold() view returns (uint256)",
     "function currentSnipeTaxBps(address) view returns (uint256)",
+    "function tokenReserve() view returns (uint256)", "function quoteReserve() view returns (uint256)",
   ];
 
   // Major assets whose admin powers are expected (issuers must be able to mint, upgrade, freeze).
@@ -255,6 +256,7 @@
       c.quoteVirtual = BigInt(Math.floor(qRaw));
       c.tokenVirtual = BigInt(Math.floor(tRaw));
       c.quoteUsd = toUsd(c.quote === "USDG" ? "USDG" : "ETH", c.quoteVirtual);
+      c.sqrt = s0[0];
     }));
     look.sort((a, b) => (b.quoteUsd || 0) - (a.quoteUsd || 0));
     return look[0] && look[0].quoteUsd > 0 ? look[0] : null;
@@ -295,6 +297,14 @@
     if (code === "0x") throw new Error(`No contract at this address on ${net.name}. Check the address and the network.`);
 
     const erc = new ethers.Contract(token, ERC20, p);
+    // Start the reads that do not depend on each other now, so they run side by side instead of one after another.
+    // Each one is awaited below at the step that uses it. (Rejections are caught here so none goes unhandled.)
+    const own = new ethers.Contract(token, OWNABLE, p);
+    const slotsP = Promise.all([SLOT_IMPL, SLOT_ADMIN, SLOT_BEACON].map((s) => tryCall(() => p.getStorage(token, s))));
+    const ownerP = (async () => (await tryCall(() => own.owner())) || (await tryCall(() => own.getOwner())))();
+    const burnedP = Promise.all([tryCall(() => erc.balanceOf(DEAD)), tryCall(() => erc.balanceOf(ethers.ZeroAddress))]);
+    const ethUsdP = net.factory ? ethPriceUsd(p, net).then((v) => ({ v }), (e) => ({ e })) : null;
+    const ponsP = net.pons ? tryCall(() => ponsLaunch(p, net, token)) : null;
     const [name, symbol, decimals, supply] = await Promise.all([
       tryCall(() => erc.name()), tryCall(() => erc.symbol()), tryCall(() => erc.decimals()), tryCall(() => erc.totalSupply()),
     ]);
@@ -302,10 +312,14 @@
     const dec = Number(decimals);
     const fmt = (v) => Number(ethers.formatUnits(v, dec));
     const info = { address: token, name: name || "Unknown", symbol: symbol || "?", decimals: dec, supply: fmt(supply), network: net.name, explorer: `${net.explorer}/token/${token}` };
+    // Logo the token's creator stored on-chain (Pons tokens have logo()), usually an ipfs:// link.
+    // Only ipfs:// and https:// links are kept; anything else is ignored.
+    const logo = String((await tryCall(() => new ethers.Contract(token, ["function logo() view returns (string)"], p).logo())) || "").trim();
+    if (/^(ipfs:\/\/|https:\/\/)[^\s"'<>]{4,300}$/.test(logo)) info.logo = logo;
 
     // --- proxy
     onStep("Checking if the code can be changed…");
-    const [impl, admin, beacon] = await Promise.all([SLOT_IMPL, SLOT_ADMIN, SLOT_BEACON].map((s) => tryCall(() => p.getStorage(token, s))));
+    const [impl, admin, beacon] = await slotsP;
     const implAddr = addrFromSlot(impl), beaconAddr = addrFromSlot(beacon);
     let scanCode = code;
     if (implAddr || beaconAddr) {
@@ -318,8 +332,7 @@
 
     // --- owner
     onStep("Looking for an owner…");
-    const own = new ethers.Contract(token, OWNABLE, p);
-    let owner = (await tryCall(() => own.owner())) || (await tryCall(() => own.getOwner()));
+    let owner = await ownerP;
     if (!owner && admin) owner = addrFromSlot(admin);
     const renounced = !owner || isBurn(owner);
     info.owner = owner && !isBurn(owner) ? owner : null;
@@ -338,7 +351,8 @@
 
     // --- holdings
     onStep("Checking who holds the supply…");
-    const burned = ((await tryCall(() => erc.balanceOf(DEAD))) || 0n) + ((await tryCall(() => erc.balanceOf(ethers.ZeroAddress))) || 0n);
+    const [burnDead, burnZero] = await burnedP;
+    const burned = (burnDead || 0n) + (burnZero || 0n);
     info.burnedPct = supply > 0n ? Number((burned * 10000n) / supply) / 100 : 0;
     if (info.owner) {
       const ob = (await tryCall(() => erc.balanceOf(info.owner))) || 0n;
@@ -351,14 +365,15 @@
 
     // --- liquidity: a Pons launch curve, Uniswap v3 and Uniswap v4
     let v3 = null, v4 = null, pons = null;
-    const ethUsd = net.factory ? await ethPriceUsd(p, net) : null;
+    let ethUsd = null;
+    if (ethUsdP) { const r = await ethUsdP; if (r.e) throw r.e; ethUsd = r.v; }
     const toUsd = (sym, raw) => {
       const q = Number(ethers.formatUnits(raw, sym === "USDG" ? 6 : 18));
       return sym === "USDG" ? q : ethUsd ? q * ethUsd : 0;
     };
     if (net.pons) {
       onStep("Checking the Pons launchpad…");
-      pons = await tryCall(() => ponsLaunch(p, net, token));
+      pons = await ponsP;
     }
     const onCurve = !!(pons && pons.onCurve);
     if (onCurve) {
@@ -380,6 +395,8 @@
     } else if (pons && pons.exists) {
       add("info", "Graduated from Pons", "This token was launched on Pons, finished its launch curve and now trades in a locked Uniswap v4 pool.");
     }
+    // The v4 search runs alongside the v3 search; its answer is only used when v3 is not already deep.
+    const v4P = net.v4 && !onCurve ? tryCall(() => findV4Pool(p, net, token, toUsd)) : null;
     if (net.factory && !onCurve) {
       onStep("Finding Uniswap v3 liquidity…");
       const f = new ethers.Contract(net.factory, FACTORY, p);
@@ -401,7 +418,7 @@
     // Skip the slower v4 search when the token already has deep v3 liquidity.
     if (net.v4 && !onCurve && !(v3 && v3.quoteUsd > 500000)) {
       onStep("Finding Uniswap v4 liquidity…");
-      v4 = await tryCall(() => findV4Pool(p, net, token, toUsd));
+      v4 = await v4P;
     }
     const venue = !v3 && !v4 ? null : !v4 || (v3 && v3.quoteUsd >= v4.quoteUsd) ? "v3" : "v4";
 
@@ -426,6 +443,17 @@
       if (venue === "v4" && v4.hooks !== ethers.ZeroAddress) {
         add("info", "Pool runs a hook", `This Uniswap v4 pool runs extra code (${v4.hooks.slice(0, 6)}…${v4.hooks.slice(-4)}) on every trade. Launchpads such as Pons use hooks. NEARL simulated trades through it.`);
       }
+    }
+
+    // --- price and market cap, read from the same market the liquidity came from (a Pons curve or a Uniswap pool)
+    const qDec = (sym) => (sym === "USDG" ? 6 : 18);
+    if (onCurve && (pons.native || ["WETH", "USDG"].includes(pons.pairSymbol))) info.priceSource = { kind: "pons", curve: pons.curve, quote: pons.native ? "ETH" : pons.pairSymbol, quoteDec: pons.native ? 18 : pons.pairDecimals };
+    else if (venue === "v3") info.priceSource = { kind: "v3", pool: v3.pool, token, quote: v3.quote, quoteDec: qDec(v3.quote) };
+    else if (venue === "v4" && !v4.empty) info.priceSource = { kind: "v4", id: v4.id, tokenIs0: v4.tokenIs0, quote: v4.quote, quoteDec: qDec(v4.quote) };
+    info.circulating = Number(ethers.formatUnits(supply - burned, dec)); // total supply minus burned tokens
+    if (info.priceSource) {
+      const pr = await tryCall(() => readPrice(p, net, info.priceSource, dec, ethUsd));
+      if (pr) { info.priceUsd = pr.priceUsd; info.marketCapUsd = pr.priceUsd * info.circulating; info.priceAt = Date.now(); }
     }
 
     // --- simulations
@@ -577,6 +605,12 @@
     if (!(sim.sell && sim.sell.ok) && !known) score = Math.min(score, 70);
     // A token posing as a Robinhood stock token is never "safe to buy", however clean its code is.
     if (info.stock && (info.stock.impersonates || info.stock.claimsRobinhood)) score = Math.min(score, 40);
+    // Bundlers, launch snipers and the creator's bundle wallets still holding over 30% together can dump
+    // on later buyers at any moment: never better than "High risk", however clean the code is.
+    if (info.launch && info.launch.insiderStillPct > 30) {
+      score = Math.min(score, 54);
+      findings.push({ level: "bad", title: `Bundlers and snipers still hold ${info.launch.insiderStillPct.toFixed(1)}%`, detail: "Wallets that bought in the first block or the first seconds, plus the creator's bundle wallets, still hold this much together. They can sell at the same time and crash the price, so NEARL rates this token High risk at best.", penalty: 0 });
+    }
     const verdict = score >= 80 ? { key: "safe", text: "Looks safe" } : score >= 55 ? { key: "careful", text: "Be careful" } : score >= 25 ? { key: "risky", text: "High risk" } : { key: "danger", text: "Do not buy" };
     const order = { bad: 0, warn: 1, info: 2, ok: 3 };
     findings.sort((a, b) => order[a.level] - order[b.level] || b.penalty - a.penalty);
@@ -622,6 +656,52 @@
     return { buyOk, tokensOut, sellOk, quoteBack };
   }
 
+  // Spot price of one token, in USD, from its market: a Pons curve (quote reserve / token reserve) or a
+  // Uniswap v3/v4 pool (sqrtPriceX96). The quote token is ETH, WETH or USDG.
+  async function readPrice(p, net, src, dec, ethUsd) {
+    let quotePerToken;
+    if (src.kind === "pons") {
+      const c = new ethers.Contract(src.curve, PONS_CURVE, p);
+      const [tr, qr] = await Promise.all([c.tokenReserve(), c.quoteReserve()]);
+      if (!tr) return null;
+      quotePerToken = Number(ethers.formatUnits(qr, src.quoteDec)) / Number(ethers.formatUnits(tr, dec));
+    } else {
+      let sqrt, tokenIs0;
+      if (src.kind === "v3") {
+        const c = new ethers.Contract(src.pool, POOL, p);
+        const [s0, t0] = await Promise.all([c.slot0(), c.token0()]);
+        sqrt = s0[0]; tokenIs0 = t0.toLowerCase() === src.token.toLowerCase();
+      } else {
+        const s0 = await new ethers.Contract(net.v4.stateView, STATE_VIEW, p).getSlot0(src.id);
+        sqrt = s0[0]; tokenIs0 = src.tokenIs0;
+      }
+      if (!sqrt) return null;
+      const raw = (Number(sqrt) / 2 ** 96) ** 2; // token1 per token0, in raw units
+      quotePerToken = (tokenIs0 ? raw : 1 / raw) * 10 ** (dec - src.quoteDec);
+    }
+    const usdPerQuote = src.quote === "USDG" ? 1 : ethUsd;
+    if (!usdPerQuote || !Number.isFinite(quotePerToken) || quotePerToken <= 0) return null;
+    return { priceUsd: quotePerToken * usdPerQuote };
+  }
+
+  // Fresh price and market cap for a token already checked (Check page refreshes these every few seconds).
+  // The ETH/USD price is reused for 20 seconds, so each refresh is only one or two calls.
+  const ethCache = {};
+  async function livePrice(netKey, info) {
+    const net = NET[netKey], src = info && info.priceSource;
+    if (!net || !src) return null;
+    const p = window.NearlRPC.provider(net.chainId);
+    let ethUsd = null;
+    if (src.quote !== "USDG") {
+      const c = ethCache[netKey];
+      if (c && Date.now() - c.at < 20000) ethUsd = c.v;
+      else { ethUsd = await ethPriceUsd(p, net); if (ethUsd) ethCache[netKey] = { v: ethUsd, at: Date.now() }; }
+    }
+    const pr = await readPrice(p, net, src, info.decimals, ethUsd);
+    if (!pr) return null;
+    return { priceUsd: pr.priceUsd, marketCapUsd: pr.priceUsd * info.circulating, at: Date.now() };
+  }
+
   async function ethPriceUsd(p, net) {
     if (!net.factory || !net.quotes.WETH || !net.quotes.USDG) return null;
     const f = new ethers.Contract(net.factory, FACTORY, p);
@@ -641,5 +721,5 @@
     return null;
   }
 
-  window.NearlCheck = { NET, check, stockStatus };
+  window.NearlCheck = { NET, check, stockStatus, livePrice };
 })();

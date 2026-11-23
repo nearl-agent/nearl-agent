@@ -29,6 +29,11 @@ async function runCheck(token, network = "mainnet") {
     sellTaxPct: r.info.sellTax,
     transferTaxPct: r.info.transferTax,
     liquidityUsd: r.info.liquidityUsd ?? null,
+    // Spot price from the token's pool or Pons curve at check time; market cap = price x (supply - burned).
+    priceUsd: r.info.priceUsd ?? null,
+    marketCapUsd: r.info.marketCapUsd ?? null,
+    // Logo link the token creator stored on-chain (ipfs:// or https://), or null.
+    logoUrl: r.info.logo || null,
     upgradeable: r.info.proxy,
     owner: r.info.owner,
     ownerSupplyPct: r.info.ownerPct ?? null,

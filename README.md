@@ -13,7 +13,7 @@ Website: <https://nearlagent.com> · X: [@nearlagent](https://x.com/nearlagent) 
 | **Check** | A 0–100 safety score for any token: simulated buy, sell and transfer, owner powers, upgradeable code, holders, first-block bundles and snipers, the creator's other launches, and official vs. copycat Robinhood stock tokens | Live on mainnet |
 | **Swap** | Swaps routed to Uniswap, with a NEARL check before every buy. No NEARL fee, no limit per swap | Live on mainnet |
 | **Guard** | Agent wallets with daily and per-transaction limits, an allowlist of destinations, pause, and withdrawals only to the owner | Live on mainnet and testnet |
-| **Earn** | "Stay Above" reward pools that pay out at each check while the ETH price stays above a safety line | Mainnet (one small pool) and testnet |
+| **Earn** | "Stay Above" reward pools that pay out at each check while the ETH price stays above a safety line | Mainnet (small, capped pools) and testnet |
 | **API & MCP** | `GET /api/check` and an MCP server at `POST /mcp` (tool `nearl_check_token`) for agents | Live |
 
 NEARL offers **no credit or lending**. The contracts are **not audited**, so mainnet deposit limits are kept small. Nothing here is investment advice.
@@ -49,6 +49,7 @@ Both run as Netlify Functions from this repository. Free to use, limited to 20 r
 | MCP server | `POST https://nearlagent.com/mcp`, tool `nearl_check_token` with `{ "token": "0x...", "network": "mainnet" }` | [`netlify/functions/mcp.js`](netlify/functions/mcp.js) |
 | Check engine (shared by both) | runs the same checks as the website | [`netlify/functions/lib/engine.js`](netlify/functions/lib/engine.js), [`web/check.js`](web/check.js) |
 | Rate limit and cache | | [`netlify/functions/lib/limits.js`](netlify/functions/lib/limits.js) |
+| Check counter for the Stats page | `GET https://nearlagent.com/api/count` (totals only: no token, IP or wallet stored) | [`netlify/functions/count.js`](netlify/functions/count.js) |
 | Share links and card images | `/s` and `/og` | [`netlify/functions/share.js`](netlify/functions/share.js), [`netlify/functions/og.js`](netlify/functions/og.js) |
 
 Try it:

@@ -63,4 +63,40 @@ async function cached(event, cacheKey, compute) {
   return value;
 }
 
-module.exports = { rateLimit, cached, LIMIT_PER_MIN };
+// ---- check counter for the Stats page ----
+// One number per source (web, api, mcp). Nothing about the check is stored: no token, no IP, no wallet.
+// Read-modify-write on the same kind of store the rate limiter uses (the "strong" mode is not available to
+// Lambda-style functions). Under heavy concurrency a count can be missed, never invented.
+const SOURCES = ["web", "api", "mcp"];
+function countStore(event) {
+  try {
+    const { connectLambda, getStore } = require("@netlify/blobs");
+    if (event && event.blobs) connectLambda(event);
+    return getStore("nearl-counts");
+  } catch (_) {
+    return null;
+  }
+}
+async function bump(event, source) {
+  if (!SOURCES.includes(source)) return;
+  const s = countStore(event);
+  if (!s) return;
+  try {
+    const key = `checks/${source}`;
+    const n = Number((await s.get(key)) || 0) + 1;
+    await s.set(key, String(n));
+  } catch (_) {}
+}
+async function counts(event) {
+  const s = countStore(event);
+  const out = { web: 0, api: 0, mcp: 0 };
+  if (s) {
+    await Promise.all(SOURCES.map(async (k) => {
+      try { out[k] = Number((await s.get(`checks/${k}`)) || 0); } catch (_) {}
+    }));
+  }
+  out.total = out.web + out.api + out.mcp;
+  return out;
+}
+
+module.exports = { rateLimit, cached, LIMIT_PER_MIN, bump, counts };

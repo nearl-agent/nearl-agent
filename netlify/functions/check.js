@@ -1,6 +1,6 @@
 // GET /api/check?token=0x...&net=mainnet|testnet  → NEARL Check result as JSON
 const { runCheck } = require("./lib/engine");
-const { rateLimit, cached, LIMIT_PER_MIN } = require("./lib/limits");
+const { rateLimit, cached, LIMIT_PER_MIN, bump } = require("./lib/limits");
 
 const HEADERS = {
   "Content-Type": "application/json; charset=utf-8",
@@ -29,6 +29,7 @@ exports.handler = async (event) => {
   try {
     const net = q.net === "testnet" ? "testnet" : "mainnet";
     const result = await cached(event, `${net}/${String(q.token).slice(0, 64)}`, () => runCheck(q.token, net));
+    await bump(event, "api");
     return { statusCode: 200, headers: { ...HEADERS, ...limitHeaders, "Cache-Control": "public, max-age=60" }, body: JSON.stringify(result) };
   } catch (e) {
     return { statusCode: 422, headers: { ...HEADERS, ...limitHeaders }, body: JSON.stringify({ error: e.message || "Check failed" }) };

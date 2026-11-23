@@ -26,16 +26,16 @@ function start() {
   renderer.setClearColor(0x000000, 0);
 
   const scene = new THREE.Scene();
-  const BG = new THREE.Color("#0B0E13");
+  const BG = new THREE.Color("#070706");
   scene.fog = new THREE.FogExp2(BG, small ? 0.055 : 0.042);
 
   const camera = new THREE.PerspectiveCamera(small ? 78 : 64, 1, 0.1, 220);
   camera.position.set(0, 0, 6);
 
-  const ACCENT = new THREE.Color("#9AA8FF");
-  const SCAN = new THREE.Color("#8FC2A9");
+  const ACCENT = new THREE.Color("#FDFAC3");
+  const SCAN = new THREE.Color("#E8E2A0");
   const BAD = new THREE.Color("#FF7E72");
-  const DIM = new THREE.Color("#2A3445");
+  const DIM = new THREE.Color("#2A281E");
 
   const LENGTH = 200;       // tunnel length in world units
   const R = 5;              // tunnel radius (hexagon)
