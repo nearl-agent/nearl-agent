@@ -4,7 +4,7 @@
 
 Before an AI agent or a trader buys a token or sends money, NEARL checks the token and limits what can be spent.
 
-Website: <https://nearlagent.com> · X: [@nearlagent](https://x.com/nearlagent)
+Website: <https://nearlagent.com> · X: [@nearlagent](https://x.com/nearlagent) · Telegram: [t.me/nearlagent](https://t.me/nearlagent)
 
 ## Products
 
@@ -106,7 +106,7 @@ npm run web     # serve the website locally
 
 ## Security
 
-Found a problem? Please do not open a public issue for anything that could put funds at risk. Contact NEARL on X first.
+Found a problem? Please do not open a public issue for anything that could put funds at risk. Contact NEARL on X or Telegram ([t.me/nearlagent](https://t.me/nearlagent)) first.
 
 ## License
 

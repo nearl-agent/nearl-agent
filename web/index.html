@@ -7,27 +7,30 @@
 <meta name="description" content="See who bundled a token before you buy it. NEARL exposes first-block bundles, launch snipers, the creator's other launches and the top holders, and simulates the buy and sell, for any token on Robinhood Chain and Pons. Free.">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="NEARL">
-<meta property="og:title" content="NEARL · The safety layer for onchain agents">
-<meta property="og:description" content="See who bundled a token before you buy it. NEARL exposes first-block bundles, launch snipers, the creator's other launches and the top holders, and simulates the buy and sell, for any token on Robinhood Chain and Pons. Free.">
+<meta property="og:title" content="NEARL · See who bundled it before you buy">
+<meta property="og:description" content="Free token safety checks on Robinhood Chain: bundles, snipers, top holders and a test buy and sell, in seconds. Plus guarded wallets for AI agents.">
 <meta property="og:url" content="https://nearlagent.com/">
-<meta property="og:image" content="https://nearlagent.com/og-card.png?v=1">
+<meta property="og:image" content="https://nearlagent.com/og-card.png?v=2">
 <meta property="og:image:width" content="2400">
 <meta property="og:image:height" content="1260">
 <meta property="og:image:alt" content="NEARL: See who bundled it before you buy. Token checks and guarded wallets for onchain agents on Robinhood Chain.">
 <meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="NEARL · See who bundled it before you buy">
+<meta name="twitter:description" content="Free token safety checks on Robinhood Chain: bundles, snipers, top holders and a test buy and sell, in seconds. Plus guarded wallets for AI agents.">
 <meta name="twitter:site" content="@nearlagent">
-<meta name="twitter:image" content="https://nearlagent.com/og-card.png?v=1">
-<link rel="icon" href="favicon.svg?v=1" type="image/svg+xml">
-<link rel="alternate icon" href="logo-icon.png?v=1" type="image/png">
+<meta name="twitter:image" content="https://nearlagent.com/og-card.png?v=2">
+<link rel="icon" href="favicon.svg?v=2" type="image/svg+xml">
+<link rel="alternate icon" href="logo-icon.png?v=2" type="image/png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Source+Code+Pro:wght@400;500;600&display=swap">
-<link rel="stylesheet" href="theme.css?v=7">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap">
+<style>/* fallback if theme.css does not load */html,body{background:#050505;color:#F5F5F0}a{color:#FDFAC3}</style>
+<link rel="stylesheet" href="theme.css?v=13">
 <style>
 /* Concept: a security scanner. The hero is a live radar of tokens launched on Robinhood Chain in the
    last hours; every blip can be checked. Sections below read like scan reports: what the scanner sees,
    how an agent trade flows through NEARL, the products, and how to plug it in. */
-:root{--scan:#8FC2A9;--scan-soft:rgba(96,145,126,.18)}
+:root{--scan:#FDFAC3;--scan-soft:rgba(253,250,195,.10)}
 body{background-image:
   linear-gradient(color-mix(in srgb,var(--ink) 3%,transparent) 1px,transparent 1px),
   linear-gradient(90deg,color-mix(in srgb,var(--ink) 3%,transparent) 1px,transparent 1px),
@@ -36,7 +39,7 @@ body{background-image:
 
 /* ---- 3D scanner tunnel (tunnel.js). Canvas is fixed behind everything; content scrolls over it. */
 #tunnel{position:fixed;inset:0;width:100%;height:100%;z-index:0;pointer-events:none;display:block;opacity:.7}
-.has-tunnel body{background-image:radial-gradient(70% 60% at 50% 45%,#121826 0%,var(--paper) 70%)}
+.has-tunnel body{background-image:radial-gradient(70% 60% at 50% 45%,#12110B 0%,var(--paper) 70%)}
 .topnav,main,#site-footer{position:relative;z-index:1}
 .has-tunnel .cell,.has-tunnel .prod,.has-tunnel .ledger,.has-tunnel pre.code,.has-tunnel .strip,.has-tunnel .scanbar{
   background:color-mix(in srgb,var(--surface) 92%,transparent);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
@@ -93,7 +96,7 @@ body{background-image:
 .report3d:focus-visible .sheet.front{outline:2px solid var(--accent);outline-offset:4px}
 .report3d .stack{position:absolute;inset:6% 4% 12%;transform-style:preserve-3d;transform:rotateX(-8deg) rotateY(-18deg)}
 .sheet{position:absolute;inset:0;border-radius:20px;padding:22px 24px;display:flex;flex-direction:column;gap:14px;overflow:hidden;
-  background:linear-gradient(160deg,#10201a,#0a1510 70%);border:1px solid color-mix(in srgb,var(--scan) 26%,var(--rule));
+  background:linear-gradient(160deg,#17160F,#0B0B08 70%);border:1px solid color-mix(in srgb,var(--scan) 26%,var(--rule));
   box-shadow:0 30px 60px -28px rgba(0,0,0,.8),0 0 0 1px rgba(0,0,0,.4);
   transform:translate3d(calc(var(--pos) * var(--off,26px)),calc(var(--pos) * var(--off,26px) * -.85),calc(var(--pos) * -70px));
   opacity:calc(1 - var(--pos) * .22);transition:transform .6s cubic-bezier(.2,.8,.2,1),opacity .6s ease}
@@ -133,6 +136,7 @@ body{background-image:
 .scanbar input:focus{outline:none}
 .scanbar:focus-within{border-color:var(--scan)}
 .chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px;font:500 13px var(--f-mono);color:var(--ink-2);align-items:center}
+.chips .free{margin-left:auto;color:var(--scan);letter-spacing:.04em}
 .chips a{border:1px solid var(--rule);border-radius:999px;padding:4px 10px;text-decoration:none;color:var(--ink)}
 .chips a:hover{border-color:var(--scan);color:var(--scan)}
 
@@ -267,7 +271,7 @@ pre.code .c{color:var(--ink-2)}pre.code .k{color:var(--scan)}
   .slide{min-height:calc(100svh - 120px);display:flex;flex-direction:column;justify-content:center}
   .hero.slide{display:grid;align-content:center}
 }
-.slide.in{border-color:color-mix(in srgb,var(--scan) 32%,var(--rule));box-shadow:0 40px 90px -50px rgba(143,194,169,.28)}
+.slide.in{border-color:color-mix(in srgb,var(--scan) 32%,var(--rule));box-shadow:0 40px 90px -50px rgba(253,250,195,.18)}
 .slide-tag{position:absolute;left:clamp(20px,4.5vw,64px);right:clamp(20px,4.5vw,64px);top:26px;display:flex;justify-content:space-between;gap:12px;
   font:500 12px var(--f-mono);letter-spacing:.14em;text-transform:uppercase;color:var(--ink-2);pointer-events:none}
 .slide-tag span:first-child{color:var(--scan)}
@@ -327,7 +331,7 @@ pre.code .c{color:var(--ink-2)}pre.code .k{color:var(--scan)}
       <input id="q" placeholder="Paste a token address (0x…)" spellcheck="false" autocomplete="off">
       <button class="btn primary" type="submit">Scan</button>
     </form>
-    <div class="chips"><span>Try:</span><a href="check.html?token=0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168">USDG</a><a href="check.html?token=0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73">WETH</a><span id="chip-live"></span></div>
+    <div class="chips"><span>Try:</span><a href="check.html?token=0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168">USDG</a><a href="check.html?token=0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73">WETH</a><span id="chip-live"></span><span class="free">Free · no wallet needed</span></div>
     <a class="nearl-ca" id="nearl-ca" href="token.html"><i></i><b>$NEARL</b><span id="nearl-ca-t">Not launched yet · CA will be posted here</span><span class="go" aria-hidden="true">→</span></a>
     <span class="scrollcue" aria-hidden="true"><i></i>Scroll to pass the gates</span>
     </div>
@@ -377,8 +381,8 @@ pre.code .c{color:var(--ink-2)}pre.code .k{color:var(--scan)}
   <!-- LIVE STRIP -->
   <div class="strip" aria-label="Live numbers">
     <div><b id="s-new">—</b><span id="s-new-l">New Uniswap v4 pools</span></div>
-    <div><b id="s-guards">—</b><span>Guard wallets (testnet)</span></div>
-    <div><b id="s-guards-main">—</b><span>Guard wallets (mainnet)</span></div>
+    <div><b id="s-stock">—</b><span>Official stock tokens tracked</span></div>
+    <div><b>Free</b><span>No sign-up, no wallet needed</span></div>
     <div><b>Bundles</b><span>Snipers &amp; top holders, from every transfer</span></div>
   </div>
 
@@ -526,7 +530,7 @@ pre.code .c{color:var(--ink-2)}pre.code .k{color:var(--scan)}
   </section>
 
   <div class="final">
-    <span class="kicker">No token. No sign-up. Just the scan.</span>
+    <span class="kicker">No sign-up. No wallet needed. Just the scan.</span>
     <h2>Paste a token. Get the truth in seconds.</h2>
     <form class="scanbar" id="scan2" role="search" style="width:100%;max-width:640px">
       <label class="sr" for="q2">Token address</label>
@@ -541,17 +545,18 @@ pre.code .c{color:var(--ink-2)}pre.code .k{color:var(--scan)}
 <script src="rpc.js?v=6"></script>
 <script src="logo.js?v=2"></script>
 <script src="footer.js"></script>
+<script src="nav.js?v=1"></script>
 <script src="wallet.js"></script>
 <script src="nearl.js?v=2"></script>
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js"}}</script>
-<script type="module" src="tunnel.js?v=2"></script>
+<script type="module" src="tunnel.js?v=3"></script>
 <script src="hero-report.js?v=1"></script>
 <script src="slides.js?v=4"></script>
 <script src="probe-code.js?v=6"></script>
 <script src="v4-pools.js?v=1"></script>
 <script src="stock-tokens.js?v=1"></script>
 <script src="nearl-token.js?v=1"></script>
-<script src="check.js?v=14"></script>
+<script src="check.js?v=17"></script>
 <script>
 (function () {
   const a = String((window.NearlToken || {}).address || "").trim();
@@ -656,7 +661,8 @@ document.getElementById("scan2").addEventListener("submit", (e) => {
   const PM = "0x8366a39CC670B4001A1121B8F6A443A643e40951";
   const INIT = new ethers.Interface(["event Initialize(bytes32 indexed id, address indexed currency0, address indexed currency1, uint24 fee, int24 tickSpacing, address hooks, uint160 sqrtPriceX96, int24 tick)"]);
   const KNOWN = new Set(["0x5fc5360d0400a0fd4f2af552add042d716f1d168", "0x0bd7d308f8e1639fab988df18a8011f41eacad73"]);
-  const colors = ["#7CF0C5", "#9AA8FF", "#F2B451", "#FF7E72", "#7FD0FF", "#E3A3FF"];
+  const OFFICIAL = new Set(((window.NearlStockTokens || {}).tokens || []).map((t) => t.address.toLowerCase()));
+  const colors = ["#FDFAC3", "#E8C468", "#F5F5F0", "#CFC98F", "#FDFAC3", "#E8C468"];
   const ago = (s) => (s < 3600 ? Math.max(1, Math.round(s / 60)) + " min ago" : Math.round(s / 3600) + " h ago");
 
   async function launches() {
@@ -667,7 +673,8 @@ document.getElementById("scan2").addEventListener("submit", (e) => {
     for (const l of logs.reverse()) {
       const a = INIT.parseLog(l).args;
       const tok = a.currency0 === ethers.ZeroAddress || KNOWN.has(a.currency0.toLowerCase()) ? a.currency1 : a.currency0;
-      if (KNOWN.has(tok.toLowerCase()) || seen.has(tok)) continue;
+      // Official Robinhood stock tokens are not new launches: a new pool for TSLA is not a new token.
+      if (KNOWN.has(tok.toLowerCase()) || OFFICIAL.has(tok.toLowerCase()) || seen.has(tok)) continue;
       seen.add(tok); list.push({ addr: tok, block: l.blockNumber });
       if (list.length >= 16) break;
     }
@@ -748,18 +755,10 @@ document.getElementById("scan2").addEventListener("submit", (e) => {
     document.getElementById("marq").innerHTML = '<span class="tok">Could not reach Robinhood Chain right now. Paste any token above to check it.</span>';
   });
 
-  // ---------- testnet numbers
-  (async () => {
-    try {
-      const dep = await Nearl.deployment("testnet"), p = Nearl.provider("testnet");
-      const f = new ethers.Contract(dep.guardFactory, ["function guardCount() view returns (uint256)"], p);
-      document.getElementById("s-guards").textContent = (await f.guardCount()).toString();
-      const mdep = await Nearl.deployment("mainnet");
-      if (mdep && mdep.guardFactory) {
-        const mf = new ethers.Contract(mdep.guardFactory, ["function guardCount() view returns (uint256)"], Nearl.provider("mainnet"));
-        document.getElementById("s-guards-main").textContent = (await mf.guardCount()).toString();
-      }
-    } catch (_) {}
+  // ---------- official Robinhood stock tokens, read from Robinhood's StockFactory (web/stock-tokens.js)
+  (() => {
+    const S = window.NearlStockTokens;
+    if (S && S.tokens) document.getElementById("s-stock").textContent = S.tokens.filter((t) => !t.symbol.includes("_")).length.toLocaleString("en-US");
   })();
 
   // ---------- code tabs

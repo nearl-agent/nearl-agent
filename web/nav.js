@@ -72,7 +72,7 @@
     </div>
     <nav aria-label="Main">${items.map((a) => `<a href="${a.getAttribute("href")}"${a.hasAttribute("aria-current") ? ' aria-current="page"' : ""}>${a.textContent}</a>`).join("")}<a href="stocks.html">Official stock tokens</a></nav>
     <div class="cta"><a class="btn primary" href="check.html">Check a token</a><button class="btn" type="button" id="nav-wallet">Connect wallet</button></div>
-    <div class="social"><a href="https://x.com/nearlagent" target="_blank" rel="noopener">X ↗</a><a href="https://github.com/nearl-agent/nearl-agent" target="_blank" rel="noopener">GitHub ↗</a></div>`;
+    <div class="social"><a href="https://x.com/nearlagent" target="_blank" rel="noopener">X ↗</a><a href="https://t.me/nearlagent" target="_blank" rel="noopener">Telegram ↗</a><a href="https://github.com/nearl-agent/nearl-agent" target="_blank" rel="noopener">GitHub ↗</a></div>`;
   document.body.appendChild(menu);
 
   const open = () => { menu.hidden = false; document.body.classList.add("nav-open"); burger.setAttribute("aria-expanded", "true"); syncWallet(); document.getElementById("nav-close").focus(); };
