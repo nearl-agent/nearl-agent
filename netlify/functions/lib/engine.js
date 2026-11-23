@@ -13,10 +13,10 @@ require("../../../web/check.js");
 const NearlCheck = globalThis.window.NearlCheck;
 
 // Compact, agent-friendly result.
-async function runCheck(token, network = "mainnet") {
+async function runCheck(token, network = "mainnet", opts = {}) {
   const net = network === "testnet" ? "testnet" : "mainnet";
   // Serverless functions have a short time limit, so the holder analysis gets a small budget here.
-  const r = await NearlCheck.check(net, String(token || ""), () => {}, { holderDeadline: Date.now() + 8500 });
+  const r = await NearlCheck.check(net, String(token || ""), () => {}, { holderDeadline: Date.now() + (opts.holderMs || 8500) });
   return {
     token: r.info.address,
     name: r.info.name,

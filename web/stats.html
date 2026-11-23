@@ -57,7 +57,7 @@
   <div class="grp">
     <h2>Mainnet <span class="status live">live</span></h2>
     <div class="tiles">
-      <div class="tile"><span>Checks run</span><b id="c-total">—</b><small id="c-split">website, API and MCP</small></div>
+      <div class="tile"><span>Checks run</span><b id="c-total">—</b><small id="c-split">website, API, MCP and Telegram</small></div>
       <div class="tile"><span>Earn pools</span><b id="m-pools">—</b><small>with real USDG</small></div>
       <div class="tile"><span>Deposited</span><b id="m-dep">—</b><small>USDG in pools</small></div>
       <div class="tile"><span>Guard wallets</span><b id="m-guards">—</b><small>on mainnet</small></div>
@@ -128,7 +128,7 @@
     if (!r.ok) throw new Error("count " + r.status);
     const c = await r.json();
     set("c-total", n(c.total));
-    set("c-split", `website ${n(c.web)} · API ${n(c.api)} · MCP ${n(c.mcp)}`);
+    set("c-split", `website ${n(c.web)} · API ${n(c.api)} · MCP ${n(c.mcp)} · Telegram ${n(c.tg || 0)}`);
   }
 
   Promise.allSettled([checks(), mainnet(), mainnetGuards(), earn(), guard()]).then((r) => {

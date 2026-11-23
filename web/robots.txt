@@ -2,5 +2,6 @@ User-agent: *
 Allow: /
 Disallow: /.netlify/
 Disallow: /s
+Disallow: /bot-setup.html
 
 Sitemap: https://nearlagent.com/sitemap.xml

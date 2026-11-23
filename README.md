@@ -15,8 +15,15 @@ Website: <https://nearlagent.com> · X: [@nearlagent](https://x.com/nearlagent) 
 | **Guard** | Agent wallets with daily and per-transaction limits, an allowlist of destinations, pause, and withdrawals only to the owner | Live on mainnet and testnet |
 | **Earn** | "Stay Above" reward pools that pay out at each check while the ETH price stays above a safety line | Mainnet (small, capped pools) and testnet |
 | **API & MCP** | `GET /api/check` and an MCP server at `POST /mcp` (tool `nearl_check_token`) for agents | Live |
+| **Telegram bot** | [@NearlCheckBot](https://t.me/NearlCheckBot): send a token address in a chat or group and get the same NEARL Check | Live |
 
 NEARL offers **no credit or lending**. The contracts are **not audited**, so mainnet deposit limits are kept small. Nothing here is investment advice.
+
+## $NEARL
+
+The official token, launched on Pons. Its only official contract address is published on [nearlagent.com/token](https://nearlagent.com/token):
+
+`0x77770B77616FD7E8F2994a45D88cd0cD8d1cbf92`
 
 ## Network
 

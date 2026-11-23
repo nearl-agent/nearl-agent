@@ -64,10 +64,10 @@ async function cached(event, cacheKey, compute) {
 }
 
 // ---- check counter for the Stats page ----
-// One number per source (web, api, mcp). Nothing about the check is stored: no token, no IP, no wallet.
+// One number per source (web, api, mcp, tg = Telegram bot). Nothing about the check is stored: no token, no IP, no wallet.
 // Read-modify-write on the same kind of store the rate limiter uses (the "strong" mode is not available to
 // Lambda-style functions). Under heavy concurrency a count can be missed, never invented.
-const SOURCES = ["web", "api", "mcp"];
+const SOURCES = ["web", "api", "mcp", "tg"];
 function countStore(event) {
   try {
     const { connectLambda, getStore } = require("@netlify/blobs");
@@ -89,13 +89,13 @@ async function bump(event, source) {
 }
 async function counts(event) {
   const s = countStore(event);
-  const out = { web: 0, api: 0, mcp: 0 };
+  const out = { web: 0, api: 0, mcp: 0, tg: 0 };
   if (s) {
     await Promise.all(SOURCES.map(async (k) => {
       try { out[k] = Number((await s.get(`checks/${k}`)) || 0); } catch (_) {}
     }));
   }
-  out.total = out.web + out.api + out.mcp;
+  out.total = out.web + out.api + out.mcp + out.tg;
   return out;
 }
 

@@ -36,6 +36,12 @@ section > p{color:var(--ink-2);margin-bottom:14px;max-width:70ch}
 .ca.live .lbl i{background:var(--good)}
 .ca .addr{font:600 clamp(15px,2.4vw,21px) var(--f-mono);word-break:break-all;margin:14px 0 18px;color:var(--ink)}
 .ca .addr.none{color:var(--ink-2);font:500 17px var(--f-body);word-break:normal}
+/* live address: one click copies it */
+.ca .addr.copy{display:block;width:100%;text-align:left;background:var(--surface-2);border:1px dashed var(--rule);border-radius:10px;padding:14px 16px;cursor:copy;transition:border-color .15s}
+.ca .addr.copy:hover{border-color:var(--accent)}
+.ca .addr.copy.done{border-color:var(--good);border-style:solid}
+.ca .hint{display:block;margin-top:8px;font:500 12px var(--f-mono);letter-spacing:.06em;text-transform:uppercase;color:var(--ink-2)}
+.ca .addr.copy.done .hint{color:var(--good)}
 .ca .acts{display:flex;gap:10px;flex-wrap:wrap}
 ul.rules{color:var(--ink-2);line-height:1.8;max-width:70ch;padding-left:20px}
 ul.rules strong{color:var(--ink)}
@@ -77,7 +83,7 @@ ul.rules strong{color:var(--ink)}
 <script src="logo.js?v=2"></script>
 <script src="footer.js?v=3"></script>
 <script src="nav.js?v=1"></script>
-<script src="nearl-token.js?v=1"></script>
+<script src="nearl-token.js?v=3"></script>
 <script>
 (function () {
   "use strict";
@@ -88,19 +94,34 @@ ul.rules strong{color:var(--ink)}
   if (!/^0x[0-9a-fA-F]{40}$/.test(a)) return; // not launched yet: keep the default text
 
   $("ca").classList.add("live");
-  $("status").textContent = "Live on Robinhood Chain" + (T.launched ? " · since " + new Date(T.launched).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" }) : "");
-  $("addr").classList.remove("none");
-  $("addr").textContent = a;
+  $("status").textContent = "Live on Pons · Robinhood Chain" + (T.launched ? " · since " + new Date(T.launched).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" }) : "");
+  // The address itself is a button: one click (or tap) copies it.
+  const box = document.createElement("button");
+  box.type = "button"; box.id = "addr"; box.className = "addr copy"; box.title = "Click to copy the contract address";
+  box.innerHTML = `<span class="mono">${a}</span><span class="hint">Click to copy</span>`;
+  $("addr").replaceWith(box);
   const links = [
     `<button class="btn primary sm" type="button" id="copy">Copy address</button>`,
     `<a class="btn sm" href="check.html?token=${a}">Check it with NEARL</a>`,
     `<a class="btn sm" href="${EX}/token/${a}" target="_blank" rel="noopener">View on explorer ↗</a>`,
   ];
+  if (/^https:\/\/fomo\.family\//.test(T.fomoUrl || "")) links.push(`<a class="btn sm" href="${T.fomoUrl.replace(/"/g, "%22")}" target="_blank" rel="noopener">NEARL on fomo ↗</a>`);
   if (/^https:\/\//.test(T.ponsUrl || "")) links.push(`<a class="btn sm" href="${T.ponsUrl.replace(/"/g, "%22")}" target="_blank" rel="noopener">Open on Pons ↗</a>`);
   $("acts").innerHTML = links.join("");
-  $("copy").addEventListener("click", async (e) => {
-    try { await navigator.clipboard.writeText(a); e.target.textContent = "Copied"; setTimeout(() => (e.target.textContent = "Copy address"), 1500); } catch (_) {}
-  });
+  async function copyCA() {
+    try { await navigator.clipboard.writeText(a); return true; } catch (_) {}
+    try { // fallback for browsers without the clipboard API
+      const t = document.createElement("textarea"); t.value = a; t.setAttribute("readonly", ""); t.style.position = "fixed"; t.style.opacity = "0";
+      document.body.appendChild(t); t.select(); const ok = document.execCommand("copy"); t.remove(); return ok;
+    } catch (_) { return false; }
+  }
+  function copied() {
+    const hint = box.querySelector(".hint"), btn = $("copy");
+    box.classList.add("done"); hint.textContent = "Copied ✓"; btn.textContent = "Copied ✓";
+    setTimeout(() => { box.classList.remove("done"); hint.textContent = "Click to copy"; btn.textContent = "Copy address"; }, 1800);
+  }
+  box.addEventListener("click", async () => { if (await copyCA()) copied(); });
+  $("copy").addEventListener("click", async () => { if (await copyCA()) copied(); });
 })();
 </script>
 </body>
