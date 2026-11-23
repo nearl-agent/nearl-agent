@@ -10,10 +10,11 @@
   const { ethers } = root;
 
   const LISTS = {
+    // publicnode first: it answers in ~0.3 s, against ~1.5 s for the official RPC (measured 23 Nov 2026).
     4663: [
+      "https://robinhood-rpc.publicnode.com",
       "https://rpc.mainnet.chain.robinhood.com",
       "https://robinhood.api.pocket.network",
-      "https://robinhood-rpc.publicnode.com",
       "https://rpc-robinhood.globalstake.io",
       "https://robinhood.rpc.blxrbdn.com",
     ],
