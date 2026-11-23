@@ -7,36 +7,37 @@
 <meta name="description" content="Paste a token address on Robinhood Chain and get a safety score before you buy: honeypot test, taxes, liquidity, owner powers.">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="NEARL">
-<meta property="og:title" content="NEARL Check">
-<meta property="og:description" content="Paste a token address on Robinhood Chain and get a safety score before you buy: honeypot test, taxes, liquidity, owner powers.">
+<meta property="og:title" content="NEARL · See who bundled it before you buy">
+<meta property="og:description" content="Free token safety checks on Robinhood Chain: bundles, snipers, top holders and a test buy and sell, in seconds. Plus guarded wallets for AI agents.">
 <meta property="og:url" content="https://nearlagent.com/check.html">
-<meta property="og:image" content="https://nearlagent.com/og-card.png?v=1">
+<meta property="og:image" content="https://nearlagent.com/og-card.png?v=2">
 <meta property="og:image:width" content="2400">
 <meta property="og:image:height" content="1260">
 <meta property="og:image:alt" content="NEARL: See who bundled it before you buy. Token checks and guarded wallets for onchain agents on Robinhood Chain.">
 <meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="NEARL · See who bundled it before you buy">
+<meta name="twitter:description" content="Free token safety checks on Robinhood Chain: bundles, snipers, top holders and a test buy and sell, in seconds. Plus guarded wallets for AI agents.">
 <meta name="twitter:site" content="@nearlagent">
-<meta name="twitter:image" content="https://nearlagent.com/og-card.png?v=1">
-<link rel="icon" href="favicon.svg?v=1" type="image/svg+xml">
-<link rel="alternate icon" href="logo-icon.png?v=1" type="image/png">
+<meta name="twitter:image" content="https://nearlagent.com/og-card.png?v=2">
+<link rel="icon" href="favicon.svg?v=2" type="image/svg+xml">
+<link rel="alternate icon" href="logo-icon.png?v=2" type="image/png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Source+Code+Pro:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap">
 <style>
 /* Layout: centered search bar, then a verdict card with a score ring, token facts, and a findings list */
 :root{
-  --paper:#EEF1F4; --surface:#FFFFFF; --ink:#111823; --ink-2:#4A5666; --rule:#D3D9E0;
-  --cobalt:#2C46E8; --cobalt-soft:#DFE4FD; --on-cobalt:#FFFFFF;
-  --good:#16834F; --good-soft:#DDF3E7; --warn:#B7791F; --warn-soft:#FBEFD7; --bad:#C2352B; --bad-soft:#FBE3E0;
-  --f-display:"Geist","Plain",-apple-system,"Segoe UI",system-ui,sans-serif;
-  --f-body:"Geist","Plain",-apple-system,"Segoe UI",system-ui,sans-serif;
-  --f-mono:"Source Code Pro",ui-monospace,Consolas,monospace;
-  color-scheme:light;
+  /* Same black and yellow palette as theme.css, so the page keeps its colours even if theme.css fails to load. */
+  --paper:#050505; --surface:#0E0E0C; --surface-2:#15140F; --ink:#F5F5F0; --ink-2:rgba(245,245,240,.58); --rule:rgba(253,250,195,.10);
+  --accent:#FDFAC3; --accent-ink:#0A0A08; --cobalt:#FDFAC3; --cobalt-soft:rgba(253,250,195,.12); --on-cobalt:#0A0A08;
+  --good:#FDFAC3; --good-soft:rgba(253,250,195,.12); --safe:#86E0A0; --safe-soft:rgba(134,224,160,.12);
+  --warn:#E8C468; --warn-soft:rgba(232,196,104,.14); --warn-bg:rgba(232,196,104,.14);
+  --bad:#FF7A6B; --bad-soft:rgba(255,122,107,.14); --bad-bg:rgba(255,122,107,.12);
+  --f-display:"Instrument Sans",-apple-system,"Segoe UI",system-ui,sans-serif;
+  --f-body:"Instrument Sans",-apple-system,"Segoe UI",system-ui,sans-serif;
+  --f-mono:"Geist Mono",ui-monospace,Consolas,monospace;
+  color-scheme:dark;
 }
-@media (prefers-color-scheme: dark){:root{
-  --paper:#0C1117; --surface:#151C25; --ink:#E8EDF3; --ink-2:#9DA9B8; --rule:#283341;
-  --cobalt:#8498FF; --cobalt-soft:#1C2858; --on-cobalt:#0A0F1E;
-  --good:#4FCB8C; --good-soft:#12301F; --warn:#E9B65A; --warn-soft:#33270F; --bad:#F2796F; --bad-soft:#341815; color-scheme:dark}}
 *{box-sizing:border-box}
 html,body{margin:0}
 [hidden]{display:none!important}
@@ -80,7 +81,7 @@ nav .in{max-width:1140px;margin:0 auto;display:flex;align-items:center;gap:18px;
 .result{margin-top:24px;display:grid;gap:16px}
 .verdict{border-radius:20px;padding:24px;display:grid;grid-template-columns:auto 1fr;gap:24px;align-items:center;border:1px solid transparent}
 @media (max-width:560px){.verdict{grid-template-columns:1fr;justify-items:start}}
-.verdict.safe{background:var(--good-soft);border-color:color-mix(in srgb,var(--good) 35%,transparent)}
+.verdict.safe{background:var(--safe-soft);border-color:color-mix(in srgb,var(--safe) 35%,transparent)}
 .verdict.careful{background:var(--warn-soft);border-color:color-mix(in srgb,var(--warn) 35%,transparent)}
 .verdict.risky,.verdict.danger{background:var(--bad-soft);border-color:color-mix(in srgb,var(--bad) 35%,transparent)}
 .ring{position:relative;width:120px;height:120px}
@@ -89,13 +90,27 @@ nav .in{max-width:1140px;margin:0 auto;display:flex;align-items:center;gap:18px;
 .ring .num small{display:block;font:500 11px var(--f-mono);color:var(--ink-2);text-align:center;margin-top:-6px}
 .verdict h2{font-size:32px;font-weight:800}
 .verdict .tok{font:500 14px var(--f-mono);color:var(--ink-2);margin-top:4px;word-break:break-all}
+.idrow{display:flex;align-items:center;gap:14px;margin-top:10px}
+.idrow .tok{margin-top:0;min-width:0}
+.tlogo{position:relative;flex:none;width:64px;height:64px;border-radius:50%;overflow:hidden;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center;font:700 20px var(--f-mono);letter-spacing:-.02em;border:1px solid var(--rule)}
+.tlogo img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity .25s}
+.tlogo img.on{opacity:1}
+.tlogo-note{display:block;margin-top:4px;font:500 11px var(--f-body);color:var(--ink-2)}
 .verdict .links2{display:flex;gap:14px;flex-wrap:wrap;margin-top:10px;font-size:14px}
 .share{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
 .share a,.share button{display:inline-flex;align-items:center;gap:7px;font:500 13.5px var(--f-body);padding:8px 12px;border-radius:8px;border:1px solid var(--rule);background:transparent;color:var(--ink);text-decoration:none;cursor:pointer}
 .share a:hover,.share button:hover{border-color:var(--ink-2)}
 .share svg{width:14px;height:14px}
 
-.facts{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.facts{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.fact.big b{font-size:22px}
+.fact .live{display:inline-flex;align-items:center;gap:6px;float:right;font:500 10.5px var(--f-mono);letter-spacing:.06em;color:var(--accent);text-transform:uppercase}
+.fact .live i{width:6px;height:6px;border-radius:50%;background:var(--accent);animation:livepulse 1.6s ease-in-out infinite}
+.fact .live.stale{color:var(--ink-2)}.fact .live.stale i{background:var(--ink-2);animation:none}
+.fact small{display:block;margin-top:6px;font:500 11px var(--f-body);color:var(--ink-2)}
+.fact b.up{color:var(--safe)}.fact b.down{color:var(--bad)}
+@keyframes livepulse{0%,100%{opacity:1}50%{opacity:.25}}
+@media (prefers-reduced-motion:reduce){.fact .live i{animation:none}}
 @media (max-width:700px){.facts{grid-template-columns:repeat(2,1fr)}}
 .fact{background:var(--surface);border:1px solid var(--rule);border-radius:14px;padding:14px;min-width:0}
 .fact span{display:block;font:500 11.5px var(--f-mono);letter-spacing:.08em;text-transform:uppercase;color:var(--ink-2)}
@@ -138,7 +153,8 @@ nav .in{max-width:1140px;margin:0 auto;display:flex;align-items:center;gap:18px;
 .how p{color:var(--ink-2);font-size:14px;margin-top:4px}
 .fine{margin-top:28px;color:var(--ink-2);font-size:13px;text-align:center;max-width:62ch;margin-inline:auto}
 </style>
-<link rel="stylesheet" href="theme.css?v=7">
+<style>/* fallback if theme.css does not load */html,body{background:#050505;color:#F5F5F0}a{color:#FDFAC3}</style>
+<link rel="stylesheet" href="theme.css?v=13">
 </head>
 <body>
 <nav class="topnav">
@@ -150,7 +166,7 @@ nav .in{max-width:1140px;margin:0 auto;display:flex;align-items:center;gap:18px;
 
 <main class="wrap">
   <header class="hero">
-    <span class="tag">🛡️ NEARL Check · free</span>
+    <span class="tag"><span aria-hidden="true" style="display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--accent);margin-right:8px;vertical-align:middle"></span>NEARL Check · free</span>
     <h1>Check a token before you buy it.</h1>
     <p>Paste a token address from Robinhood Chain. In a few seconds you get a safety score: can you sell it, how much tax it takes, how deep the liquidity is, and what the owner can still do.</p>
   </header>
@@ -186,19 +202,100 @@ nav .in{max-width:1140px;margin:0 auto;display:flex;align-items:center;gap:18px;
 <script src="rpc.js?v=6"></script>
 <script src="logo.js?v=2"></script>
 <script src="footer.js"></script>
+<script src="nav.js?v=1"></script>
 <script src="probe-code.js?v=6"></script>
 <script src="v4-pools.js?v=1"></script>
-<script src="check-holders.js?v=1"></script>
+<script src="check-holders.js?v=2"></script>
 <script src="stock-tokens.js?v=1"></script>
 <script src="nearl-token.js?v=1"></script>
-<script src="check.js?v=14"></script>
+<script src="check.js?v=18"></script>
 <script>
 (function(){
   "use strict";
   const $ = (id) => document.getElementById(id);
   const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
   // Mainnet is where real tokens live. If an address is not found there, we quietly try testnet.
-  let net = "mainnet", busy = false;
+  let net = "mainnet", busy = false, liveTimer = null;
+  // Prices: $1,234.56, $0.0123, and tiny prices with the zero count in subscript like DEX sites ($0.0₅2934).
+  const SUB = "₀₁₂₃₄₅₆₇₈₉";
+  function fmtPrice(v) {
+    if (!(v > 0)) return "—";
+    if (v >= 1) return "$" + v.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: v >= 1000 ? 2 : 4 });
+    if (v >= 0.0001) return "$" + v.toPrecision(4).replace(/0+$/, "");
+    // The subscript is the number of zeros after "0.": 0.000002935 has 5, so it reads $0.0₅2935.
+    let zeros = Math.floor(-Math.log10(v)), digits = Math.round(v * 10 ** (zeros + 4));
+    if (digits >= 10000) { zeros -= 1; digits = Math.round(digits / 10); } // rounding carried into a new digit
+    return "$0.0" + String(zeros).split("").map((d) => SUB[d]).join("") + String(digits).slice(0, 4);
+  }
+  const fmtUsd = (v) => (v > 0 ? "$" + fmtNum(v) : "—");
+  function stopLive() { if (liveTimer) clearInterval(liveTimer); liveTimer = null; }
+
+  // Token logo, shown from its original file at full resolution. First the logo the creator stored
+  // on-chain (Pons tokens), then the image on DexScreener, else the ticker's initials stay.
+  // IPFS gateways are tried one after another because public gateways are often busy.
+  const IPFS = ["https://gateway.pinata.cloud/ipfs/", "https://ipfs.io/ipfs/", "https://dweb.link/ipfs/", "https://w3s.link/ipfs/"];
+  const initials = (sym) => (String(sym || "?").replace(/[^A-Za-z0-9]/g, "").slice(0, 2) || "?").toUpperCase();
+  function logoUrls(src) {
+    if (/^ipfs:\/\//.test(src)) { const path = src.replace(/^ipfs:\/\/(ipfs\/)?/, ""); return IPFS.map((g) => g + path); }
+    return /^https:\/\//.test(src) ? [src] : [];
+  }
+  async function dexImage(addr) {
+    try {
+      const r = await fetch(`https://api.dexscreener.com/latest/dex/tokens/${addr}`, { signal: AbortSignal.timeout(6000) });
+      if (!r.ok) return null;
+      const j = await r.json();
+      const pair = (j.pairs || []).find((p) => p.baseToken && p.baseToken.address.toLowerCase() === addr.toLowerCase() && p.info && p.info.imageUrl);
+      const u = pair && pair.info.imageUrl;
+      return typeof u === "string" && /^https:\/\//.test(u) ? u : null;
+    } catch (_) { return null; }
+  }
+  async function showLogo(info, netKey) {
+    const box = document.getElementById("tlogo"), note = document.getElementById("tlogo-note");
+    if (!box) return;
+    const tryUrls = (urls) => new Promise((resolve) => {
+      let k = 0;
+      const next = () => {
+        if (k >= urls.length) return resolve(false);
+        const img = new Image();
+        img.alt = ""; img.referrerPolicy = "no-referrer"; img.decoding = "async";
+        const t = setTimeout(() => { img.src = ""; next(); }, 8000);
+        img.onload = () => { clearTimeout(t); if (!document.getElementById("tlogo")) return resolve(true); box.appendChild(img); requestAnimationFrame(() => img.classList.add("on")); resolve(true); };
+        img.onerror = () => { clearTimeout(t); next(); };
+        img.src = urls[k++];
+      };
+      next();
+    });
+    let ok = false, from = "";
+    if (info.logo) { ok = await tryUrls(logoUrls(info.logo)); from = "Logo set by the token's creator on-chain"; }
+    if (!ok && netKey === "mainnet") { const u = await dexImage(info.address); if (u) { ok = await tryUrls([u]); from = "Logo from DexScreener"; } }
+    if (ok && note) { note.textContent = from + ". A logo does not prove a token is real."; note.hidden = false; }
+  }
+  // Re-read the price from the pool or curve every 3 seconds while the result is on screen.
+  function startLive(r, netKey) {
+    stopLive();
+    const i = r.info;
+    if (!i.priceSource || !window.NearlCheck.livePrice) return;
+    let last = i.priceUsd, fails = 0, running = false;
+    const tick = async () => {
+      if (document.hidden || running) return;
+      running = true;
+      try {
+        const l = await window.NearlCheck.livePrice(netKey, i);
+        if (!l) throw new Error("no price");
+        fails = 0;
+        const pe = document.getElementById("f-price"), me = document.getElementById("f-mcap"), le = document.getElementById("f-live");
+        if (!pe || !me) return stopLive();
+        pe.textContent = fmtPrice(l.priceUsd); me.textContent = fmtUsd(l.marketCapUsd);
+        const cls = l.priceUsd > last * 1.00001 ? "up" : l.priceUsd < last * 0.99999 ? "down" : "";
+        [pe, me].forEach((e) => { e.classList.remove("up", "down"); if (cls) { e.classList.add(cls); setTimeout(() => e.classList.remove(cls), 900); } });
+        last = l.priceUsd;
+        if (le) { le.classList.remove("stale"); le.lastChild.textContent = "Live"; }
+      } catch (_) {
+        if (++fails >= 3) { const le = document.getElementById("f-live"); if (le) { le.classList.add("stale"); le.lastChild.textContent = "Paused"; } }
+      } finally { running = false; }
+    };
+    liveTimer = setInterval(tick, 3000);
+  }
   $("examples").innerHTML = "Try: " + NearlCheck.NET.mainnet.examples.map(([s, a]) => `<button type="button" data-a="${a}">${s}</button>`).join("");
   $("examples").querySelectorAll("button").forEach((b) => (b.onclick = () => { $("addr").value = b.dataset.a; run(); }));
 
@@ -229,7 +326,7 @@ nav .in{max-width:1140px;margin:0 auto;display:flex;align-items:center;gap:18px;
   }
 
   function render(r) {
-    const i = r.info, color = { safe: "--good", careful: "--warn", risky: "--bad", danger: "--bad" }[r.verdict.key];
+    const i = r.info, color = { safe: "--safe", careful: "--warn", risky: "--bad", danger: "--bad" }[r.verdict.key];
     const C = 2 * Math.PI * 52, dash = (r.score / 100) * C;
     $("result").innerHTML = `
       <div class="verdict ${r.verdict.key}">
@@ -240,8 +337,8 @@ nav .in{max-width:1140px;margin:0 auto;display:flex;align-items:center;gap:18px;
         </div>
         <div>
           <h2 style="color:var(${color})">${r.verdict.text}</h2>
-          <p class="tok">${esc(i.name)} (${esc(i.symbol)}) · ${esc(i.network)}<br>${i.address}</p>
-          <div class="links2"><a href="${i.explorer}" target="_blank" rel="noopener">View on explorer ↗</a></div>
+          <div class="idrow"><div class="tlogo" id="tlogo" aria-hidden="true">${esc(initials(i.symbol))}</div><p class="tok">${esc(i.name)} (${esc(i.symbol)}) · ${esc(i.network)}<br>${i.address}<small class="tlogo-note" id="tlogo-note" hidden></small></p></div>
+          <div class="links2"><a href="${i.explorer}" target="_blank" rel="noopener">View on explorer ↗</a>${net === "mainnet" && i.priceSource && i.priceSource.kind !== "pons" ? `<a href="https://dexscreener.com/robinhood/${i.address}" target="_blank" rel="noopener">Compare on DexScreener ↗</a>` : ""}</div>
           <div class="share" aria-label="Share this result">
             <a id="share-x" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17.8 3h3.1l-6.8 7.8 8 10.2h-6.3l-4.9-6.4L5.3 21H2.2l7.3-8.4L1.8 3h6.4l4.4 5.9L17.8 3zm-1.1 16.2h1.7L7.4 4.7H5.6l11.1 14.5z"/></svg>Share on X</a>
             <a id="share-tg" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M21.4 4.1 2.9 11.2c-1.3.5-1.2 1.2-.2 1.5l4.7 1.5 1.8 5.6c.2.6.4.8.9.8.4 0 .6-.2.9-.4l2.3-2.2 4.7 3.5c.9.5 1.5.2 1.7-.8l3.1-14.5c.3-1.3-.5-1.8-1.4-1.1zM9.1 14l9.1-5.8c.4-.3.8-.1.5.2l-7.5 6.8-.3 3.2L9.1 14z"/></svg>Telegram</a>
@@ -251,6 +348,8 @@ nav .in{max-width:1140px;margin:0 auto;display:flex;align-items:center;gap:18px;
         </div>
       </div>
       <div class="facts">
+        <div class="fact big"><span>Price${i.priceSource && i.priceUsd ? '<em class="live" id="f-live"><i></i>Live</em>' : ""}</span><b id="f-price">${fmtPrice(i.priceUsd)}</b></div>
+        <div class="fact big"><span>Market cap</span><b id="f-mcap">${fmtUsd(i.marketCapUsd)}</b><small>${i.priceUsd ? "From the " + (i.priceSource.kind === "pons" ? "Pons curve" : "pool") + " price, updated every 3 s. Can differ slightly from other sites." : i.pons && i.pool ? "No dollar price: the Pons curve trades against " + esc(i.pool.pair.split("/").pop()) + ", not ETH or USDG." : "No price: no pool or curve found."}</small></div>
         <div class="fact"><span>Buy tax</span><b>${pct(i.buyTax)}</b></div>
         <div class="fact"><span>Sell tax</span><b>${pct(i.sellTax)}</b></div>
         <div class="fact"><span>Liquidity</span><b>${i.liquidityUsd ? "$" + fmtNum(i.liquidityUsd) : "—"}</b></div>
@@ -278,6 +377,7 @@ nav .in{max-width:1140px;margin:0 auto;display:flex;align-items:center;gap:18px;
     const a = $("addr").value.trim();
     if (!a) { $("addr").focus(); return; }
     busy = true; $("go").disabled = true;
+    stopLive();
     $("error").hidden = true; $("result").hidden = true;
     $("status").hidden = false; $("status").textContent = "Starting…";
     try {
@@ -292,6 +392,10 @@ nav .in{max-width:1140px;margin:0 auto;display:flex;align-items:center;gap:18px;
         r = await NearlCheck.check("testnet", a, step).catch(() => { throw new Error("No token at this address on Robinhood Chain. Check that you copied the full address."); });
       }
       render(r);
+      // Adds one to the public check counter on the Stats page. Nothing about the check is sent.
+      try { fetch("/api/count", { method: "POST", keepalive: true }).catch(() => {}); } catch (_) {}
+      startLive(r, net);
+      showLogo(r.info, net);
       history.replaceState(null, "", `?net=${net}&token=${encodeURIComponent(r.info.address)}`);
     } catch (e) {
       console.error(e);
