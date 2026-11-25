@@ -22,6 +22,10 @@
   node_bundler = "esbuild"
   included_files = ["web/rpc.js", "web/check-holders.js", "web/check.js", "web/probe-code.js", "web/v4-pools.js", "web/stock-tokens.js", "web/nearl-token.js", "web/logo.svg", "node_modules/@resvg/resvg-wasm/index_bg.wasm", "node_modules/@fontsource/inter/files/inter-latin-400-normal.woff", "node_modules/@fontsource/inter/files/inter-latin-600-normal.woff", "node_modules/@fontsource/inter/files/inter-latin-700-normal.woff", "node_modules/@fontsource/source-code-pro/files/source-code-pro-latin-500-normal.woff"]
 
+# Telegram channel alerts for Pons launches (close to bonding, bonded, serial launchers), every 10 minutes.
+[functions."tg-alerts"]
+  schedule = "*/10 * * * *"
+
 # Old Netlify address → nearlagent.com. The API and MCP keep answering on the old address too,
 # because agents may already use it and many clients do not follow redirects on POST.
 [[redirects]]

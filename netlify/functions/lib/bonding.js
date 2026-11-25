@@ -144,4 +144,49 @@ async function scanBonding(prev, { limit = 60 } = {}) {
   };
 }
 
-module.exports = { scanBonding };
+// ---- shared cache: the page, the API and the Telegram alerts all read the same scan ----
+const FRESH_MS = 60 * 1000;
+const SNAP_EVERY_MS = 10 * 60 * 1000; // keep a snapshot every 10 minutes, for the "ETH in" column
+const SNAP_KEEP = 8;
+const mem = {};
+
+function bondingStore(event) {
+  try {
+    const { connectLambda, getStore } = require("@netlify/blobs");
+    if (event && event.blobs) connectLambda(event);
+    return getStore("nearl-bonding");
+  } catch (_) {
+    return null;
+  }
+}
+async function readKey(s, key) {
+  try { return s ? await s.get(key, { type: "json" }) : mem[key] || null; } catch (_) { return mem[key] || null; }
+}
+async function writeKey(s, key, value) {
+  mem[key] = value;
+  try { if (s) await s.setJSON(key, value); } catch (_) {}
+}
+
+/** The latest scan, from the cache when it is under maxAgeMs old, else a fresh one. Falls back to a stale copy if the chain cannot be read. */
+async function getBonding(s, { maxAgeMs = FRESH_MS } = {}) {
+  const now = Date.now();
+  const last = await readKey(s, "latest");
+  if (last && now - last.at < maxAgeMs) return { data: last.data, ageMs: now - last.at };
+  try {
+    // Compare against the newest snapshot that is at least 45 minutes old, else the oldest one kept.
+    const hist = (await readKey(s, "hist")) || [];
+    const old = hist.filter((h) => now - Date.parse(h.at) >= 45 * 60 * 1000);
+    const prev = old.length ? old[old.length - 1] : hist[0] || null;
+    const data = await scanBonding(prev);
+    const snap = data.snapshot;
+    delete data.snapshot;
+    await writeKey(s, "latest", { at: now, data });
+    if (!hist.length || now - Date.parse(hist[hist.length - 1].at) >= SNAP_EVERY_MS) await writeKey(s, "hist", [...hist, snap].slice(-SNAP_KEEP));
+    return { data, ageMs: 0 };
+  } catch (e) {
+    if (last) return { data: { ...last.data, stale: true }, ageMs: now - last.at };
+    throw e;
+  }
+}
+
+module.exports = { scanBonding, getBonding, bondingStore, readKey, writeKey };
