@@ -1,0 +1,208 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>NEARL Bonding</title>
+<meta name="description" content="Pons launches on Robinhood Chain closest to graduating into Uniswap v4, read live from the chain, with NEARL's creator checks.">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="NEARL">
+<meta property="og:title" content="NEARL Bonding · Pons launches closest to graduating">
+<meta property="og:description" content="Every Pons launch on Robinhood Chain, sorted by how close it is to bonding into Uniswap v4. Read live from the chain, with creator checks.">
+<meta property="og:url" content="https://nearlagent.com/bonding">
+<meta property="og:image" content="https://nearlagent.com/og-card.png?v=3">
+<meta property="og:image:width" content="2400">
+<meta property="og:image:height" content="1260">
+<meta property="og:image:alt" content="NEARL: See who bundled it before you buy. Token checks and guarded wallets for onchain agents on Robinhood Chain.">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="NEARL Bonding · Pons launches closest to graduating">
+<meta name="twitter:description" content="Every Pons launch on Robinhood Chain, sorted by how close it is to bonding into Uniswap v4. Read live from the chain, with creator checks.">
+<meta name="twitter:site" content="@nearlagent">
+<meta name="twitter:image" content="https://nearlagent.com/og-card.png?v=3">
+<link rel="icon" href="favicon.svg?v=2" type="image/svg+xml">
+<link rel="alternate icon" href="logo-icon.png?v=2" type="image/png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap">
+<style>/* fallback if theme.css does not load */html,body{background:#050505;color:#F5F5F0}a{color:#FDFAC3}</style>
+<link rel="stylesheet" href="theme.css?v=13">
+<style>
+/* Bonding tracker: one row per Pons launch still on its curve, highest progress first.
+   Every number comes from /api/bonding, which reads the Pons factory and each curve on Robinhood Chain. */
+.sum{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:22px}
+@media (max-width:820px){.sum{grid-template-columns:1fr 1fr}}
+.tile{background:var(--surface);border:1px solid var(--rule);border-radius:14px;padding:14px 16px;min-width:0}
+.tile span{display:block;font:500 11.5px var(--f-mono);letter-spacing:.08em;text-transform:uppercase;color:var(--ink-2)}
+.tile b{display:block;font:700 24px var(--f-mono);margin-top:6px;font-variant-numeric:tabular-nums}
+.bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;margin-top:26px}
+.filters{display:flex;flex-wrap:wrap;gap:8px}
+.chip{font:500 12.5px var(--f-mono);padding:7px 12px;border-radius:999px;border:1px solid var(--rule);background:transparent;color:var(--ink-2);cursor:pointer}
+.chip[aria-pressed="true"]{color:var(--paper);background:var(--accent);border-color:var(--accent)}
+.live{display:inline-flex;align-items:center;gap:8px;font:500 12.5px var(--f-mono);color:var(--ink-2)}
+.live i{width:8px;height:8px;border-radius:50%;background:var(--accent);animation:lp 1.6s ease-in-out infinite}
+@keyframes lp{50%{opacity:.25}}
+@media (prefers-reduced-motion:reduce){.live i{animation:none}}
+.list{margin-top:14px;border:1px solid var(--rule);border-radius:14px;overflow:hidden;background:var(--surface)}
+.row{display:grid;grid-template-columns:36px minmax(150px,1.4fr) minmax(180px,2fr) 100px 110px minmax(150px,1.2fr) 92px;gap:14px;align-items:center;padding:14px 16px;border-top:1px solid var(--rule)}
+.row:first-child{border-top:none}
+.row>*{min-width:0}
+.row.head{font:500 11px var(--f-mono);letter-spacing:.08em;text-transform:uppercase;color:var(--ink-2);padding-top:12px;padding-bottom:12px}
+.row .rk{font:500 13px var(--f-mono);color:var(--ink-2)}
+.tok b{display:block;font:600 16px var(--f-body);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tok small{display:block;font:500 12px var(--f-mono);color:var(--ink-2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tok .own{display:inline-block;margin-left:6px;font:600 10.5px var(--f-mono);letter-spacing:.06em;padding:2px 6px;border-radius:5px;background:var(--accent);color:var(--paper);vertical-align:2px}
+.prog .t{display:flex;justify-content:space-between;font:500 13px var(--f-mono)}
+.prog .t span{color:var(--ink-2)}
+.prog .track{height:8px;border-radius:4px;background:rgba(245,245,240,.08);margin-top:7px;overflow:hidden}
+.prog .fill{height:100%;border-radius:4px;background:var(--accent)}
+.num{font:500 14px var(--f-mono);font-variant-numeric:tabular-nums}
+.num small{display:block;font-size:11.5px;color:var(--ink-2)}
+.up{color:var(--accent)}
+.flag{font:500 12.5px var(--f-body);line-height:1.35}
+.flag .bad{color:var(--bad)}
+.flag .mute{color:var(--ink-2)}
+.act a{display:inline-flex;justify-content:center;width:100%;padding:8px 10px;border-radius:999px;border:1px solid var(--rule);font:600 13px var(--f-body);color:var(--ink);text-decoration:none}
+.act a:hover{border-color:var(--accent);color:var(--accent)}
+.row.ser{background:linear-gradient(90deg,rgba(255,122,107,.05),transparent 60%)}
+.row.mine{background:linear-gradient(90deg,rgba(253,250,195,.06),transparent 60%)}
+@media (max-width:900px){
+  .row.head{display:none}
+  .row{grid-template-columns:24px 1fr 1fr 92px;grid-template-areas:"rk tok tok act" "prog prog prog prog" "mc mc in in" "flag flag flag flag";row-gap:10px;column-gap:10px}
+  .row .rk{grid-area:rk}.row .tok{grid-area:tok}.row .prog{grid-area:prog}.row .mc{grid-area:mc}.row .in{grid-area:in}.row .flag{grid-area:flag}.row .act{grid-area:act}
+}
+.grads{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.grads a{display:inline-flex;gap:8px;align-items:center;padding:8px 12px;border-radius:10px;border:1px solid var(--rule);background:var(--surface);font:500 13px var(--f-mono);color:var(--ink);text-decoration:none}
+.grads a small{color:var(--ink-2)}
+.note{color:var(--ink-2);font-size:13.5px;margin-top:14px;max-width:80ch}
+.empty{padding:30px 16px;text-align:center;color:var(--ink-2)}
+h2.sub{font-size:20px;font-weight:700;margin-top:34px}
+</style>
+</head>
+<body>
+<nav class="topnav">
+  <div class="in">
+    <a class="brand" href="index.html"><span class="logo" aria-hidden="true"></span>NEARL</a>
+    <div class="links"><a href="token.html">$NEARL</a><a href="check.html">Check</a><a href="bonding.html" aria-current="page">Bonding</a><a href="swap.html">Swap</a><a href="guard.html">Guard</a><a href="app.html">Earn</a><a href="docs.html">Docs</a></div>
+  </div>
+</nav>
+
+<main class="wrap">
+  <header class="page-head">
+    <span class="eyebrow">Bonding · Pons on Robinhood Chain</span>
+    <h1 style="margin-top:10px">Which Pons launches are closest to bonding?</h1>
+    <p>Every Pons launch from the last 3 days, sorted by how far its curve is toward graduating into a Uniswap v4 pool. Read live from the chain, with NEARL's creator check on each row. Open the full scan before you buy anything.</p>
+  </header>
+
+  <div class="sum">
+    <div class="tile"><span>Launches · 3 days</span><b id="s-launch">—</b></div>
+    <div class="tile"><span>Bonded · 3 days</span><b id="s-grad">—</b></div>
+    <div class="tile"><span>Graduates at</span><b id="s-thr">—</b></div>
+    <div class="tile"><span>ETH price</span><b id="s-eth">—</b></div>
+  </div>
+
+  <div class="bar">
+    <div class="filters" role="group" aria-label="Filters">
+      <button class="chip" id="f-serial" aria-pressed="false" type="button">Hide serial launchers</button>
+      <button class="chip" id="f-half" aria-pressed="false" type="button">Over 50% only</button>
+      <button class="chip" id="f-flow" aria-pressed="false" type="button">Sort by recent ETH in</button>
+    </div>
+    <span class="live" id="live"><i></i><span id="upd">Reading the chain…</span></span>
+  </div>
+
+  <div class="list" id="list" aria-live="polite">
+    <div class="empty">Reading Pons launches from Robinhood Chain…</div>
+  </div>
+
+  <h2 class="sub">Bonded in the last 3 days</h2>
+  <div class="grads" id="grads"><span class="note" style="margin:0">Reading…</span></div>
+
+  <p class="note"><b style="color:var(--ink)">Not a recommendation.</b> Being close to bonding says nothing about whether a token is safe or will go up. Most new tokens lose value. The row shows only the creator check; the full scan adds the test buy and sell, bundles, snipers and top holders. Only ETH-paired launches are listed. Market cap = curve price × supply, in dollars from the WETH/USDG pool on Robinhood Chain.</p>
+</main>
+
+<footer id="site-footer"></footer>
+<script src="logo.js?v=2"></script>
+<script src="footer.js"></script>
+<script src="nav.js?v=1"></script>
+<script src="nearl-token.js"></script>
+<script>
+(function () {
+  "use strict";
+  const $ = (id) => document.getElementById(id);
+  const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  const short = (a) => a.slice(0, 6) + "…" + a.slice(-4);
+  const usd = (v) => v == null ? "—" : v >= 1e6 ? "$" + (v / 1e6).toFixed(2) + "M" : v >= 1e3 ? "$" + (v / 1e3).toFixed(1) + "K" : "$" + Math.round(v);
+  const eth = (v) => (v >= 1 ? v.toFixed(2) : v.toFixed(3));
+  const age = (h) => h < 1 ? Math.max(1, Math.round(h * 60)) + "m" : h < 48 ? Math.round(h) + "h" : Math.round(h / 24) + "d";
+  const own = ((window.NearlToken && window.NearlToken.address) || "").toLowerCase();
+  const opts = { serial: false, half: false, flow: false };
+  let data = null;
+
+  // Remember filters for this visitor only.
+  try { Object.assign(opts, JSON.parse(localStorage.getItem("nearl-bonding-opts") || "{}")); } catch (_) {}
+  const saveOpts = () => { try { localStorage.setItem("nearl-bonding-opts", JSON.stringify(opts)); } catch (_) {} };
+  [["f-serial", "serial"], ["f-half", "half"], ["f-flow", "flow"]].forEach(([id, k]) => {
+    const b = $(id);
+    b.setAttribute("aria-pressed", String(!!opts[k]));
+    b.addEventListener("click", () => { opts[k] = !opts[k]; b.setAttribute("aria-pressed", String(opts[k])); saveOpts(); draw(); });
+  });
+
+  function flagHtml(t) {
+    if (t.serialLauncher) return `<span class="bad">Serial launcher:</span> ${t.creatorOtherLaunches} other launches in 3 days, none bonded`;
+    if (t.creatorOtherLaunches >= 3) return `Creator launched ${t.creatorOtherLaunches} others · ${t.creatorOtherGraduated} bonded`;
+    if (t.creatorOtherLaunches > 0) return `<span class="mute">Creator launched ${t.creatorOtherLaunches} other${t.creatorOtherLaunches === 1 ? "" : "s"}</span>`;
+    return `<span class="mute">No other launches from this creator</span>`;
+  }
+
+  function draw() {
+    if (!data) return;
+    let rows = data.tokens.slice();
+    if (opts.serial) rows = rows.filter((t) => !t.serialLauncher);
+    if (opts.half) rows = rows.filter((t) => t.progressPct >= 50);
+    if (opts.flow) rows.sort((a, b) => (b.ethInSincePrev || 0) - (a.ethInSincePrev || 0));
+    const mins = data.prevAt ? Math.max(1, Math.round((Date.parse(data.updatedAt) - Date.parse(data.prevAt)) / 60000)) : null;
+    const head = `<div class="row head"><span>#</span><span>Token</span><span>Curve</span><span>Mkt cap</span><span>ETH in${mins ? ` · ${mins}m` : ""}</span><span>Creator</span><span></span></div>`;
+    if (!rows.length) { $("list").innerHTML = head + '<div class="empty">No launches match these filters right now.</div>'; return; }
+    $("list").innerHTML = head + rows.map((t, i) => {
+      const mine = t.token.toLowerCase() === own;
+      const inflow = t.ethInSincePrev == null ? '<span style="color:var(--ink-2)">—</span>' : t.ethInSincePrev > 0 ? `<span class="up">+${eth(t.ethInSincePrev)}</span>` : eth(t.ethInSincePrev);
+      return `<div class="row${t.serialLauncher ? " ser" : ""}${mine ? " mine" : ""}">
+        <span class="rk">${i + 1}</span>
+        <div class="tok"><b>${esc(t.symbol)}${mine ? '<span class="own">our token</span>' : ""}</b><small>${esc(t.name || "")} · ${short(t.token)} · ${age(t.launchedHoursAgo)}</small></div>
+        <div class="prog"><div class="t"><b>${t.progressPct.toFixed(1)}%${t.readyToGraduate ? " · ready" : ""}</b><span>${eth(t.ethOnCurve)} / ${t.graduatesAtEth} ETH</span></div><div class="track"><div class="fill" style="width:${Math.min(100, t.progressPct)}%"></div></div></div>
+        <div class="num mc">${usd(t.marketCapUsd)}<small>${t.creatorTaxPct ? t.creatorTaxPct + "% creator tax" : "no creator tax"}</small></div>
+        <div class="num in">${inflow}<small>ETH in${mins ? " · last " + mins + "m" : ""}</small></div>
+        <div class="flag">${flagHtml(t)}</div>
+        <div class="act"><a href="check.html?token=${t.token}">Full scan</a></div>
+      </div>`;
+    }).join("");
+  }
+
+  function drawGrads() {
+    const g = data.graduated || [];
+    $("grads").innerHTML = g.length
+      ? g.map((t) => `<a href="check.html?token=${t.token}">${esc(t.symbol)} <small>launched ${age(t.launchedHoursAgo)} ago · scan ↗</small></a>`).join("")
+      : '<span class="note" style="margin:0">No ETH-paired launch bonded in the last 3 days.</span>';
+  }
+
+  async function load() {
+    try {
+      const r = await fetch("/api/bonding", { cache: "no-store" });
+      if (!r.ok) throw new Error("HTTP " + r.status);
+      data = await r.json();
+      $("s-launch").textContent = data.launches.toLocaleString("en-US");
+      $("s-grad").textContent = String(data.graduatedInWindow);
+      $("s-thr").textContent = data.tokens[0] ? data.tokens[0].graduatesAtEth + " ETH" : "—";
+      $("s-eth").textContent = data.ethUsd ? "$" + Math.round(data.ethUsd).toLocaleString("en-US") : "—";
+      draw(); drawGrads();
+      $("upd").textContent = `Updated ${new Date(data.updatedAt).toLocaleTimeString()}${data.stale ? " (cached)" : ""} · refreshes every minute`;
+    } catch (e) {
+      $("upd").textContent = "Could not read the chain right now. Retrying in a minute.";
+      if (!data) $("list").innerHTML = '<div class="empty">Could not read Robinhood Chain right now. This page retries every minute.</div>';
+    }
+  }
+  load();
+  setInterval(() => { if (!document.hidden) load(); }, 60000);
+})();
+</script>
+</body>
+</html>

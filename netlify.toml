@@ -48,6 +48,11 @@
   status = 200
 
 [[redirects]]
+  from = "/api/bonding"
+  to = "/.netlify/functions/bonding"
+  status = 200
+
+[[redirects]]
   from = "/api/count"
   to = "/.netlify/functions/count"
   status = 200

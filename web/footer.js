@@ -4,7 +4,7 @@
   const el = document.getElementById("site-footer");
   if (!el) return;
   const cols = [
-    ["Product", [["$NEARL token", "token.html"], ["Check", "check.html"], ["Swap", "swap.html"], ["Guard", "guard.html"], ["Earn", "app.html"], ["API & MCP", "docs.html#api"]]],
+    ["Product", [["$NEARL token", "token.html"], ["Check", "check.html"], ["Bonding tracker", "bonding.html"], ["Swap", "swap.html"], ["Guard", "guard.html"], ["Earn", "app.html"], ["API & MCP", "docs.html#api"]]],
     ["Resources", [["Docs", "docs.html"], ["Dev log", "devlog.html"], ["Stats", "stats.html"], ["Contracts", "contracts.html"], ["Official stock tokens", "stocks.html"], ["Agent skill file", "skill.md"]]],
     ["Legal", [["Terms", "terms.html"], ["Privacy", "privacy.html"], ["Risk disclosure", "terms.html#risk"], ["Verify contracts", "contracts.html#verify"]]],
   ];

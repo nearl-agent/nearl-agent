@@ -51,6 +51,7 @@
       <span class="grp">Products</span>
       <a href="#check">Check</a>
       <a href="#scoring">How scoring works</a>
+      <a href="#bonding">Bonding tracker</a>
       <a href="#swap">Swap</a>
       <a href="#guard">Guard</a>
       <a href="#earn">Earn</a>
@@ -139,6 +140,16 @@
       </table></div>
       <p>If the sell could not be simulated, the score is capped at 70 (Be careful), except for well-known tokens such as USDG and WETH.</p>
       <div class="callout">A good score is not a guarantee. Automated checks can miss risks. Treat the score as one input.</div>
+
+      <h2 id="bonding">Bonding tracker</h2>
+      <p>The <a href="bonding.html">Bonding page</a> lists every Pons launch from the last 3 days that is still on its curve, sorted by how far it is toward graduating ("bonding") into a Uniswap v4 pool. It refreshes every minute.</p>
+      <ul>
+        <li><strong>Curve progress.</strong> ETH buyers have put into the curve, against the amount that makes it graduate (4.2 ETH today), read from each curve.</li>
+        <li><strong>Market cap.</strong> The curve price times the supply, in dollars from the WETH/USDG pool on Robinhood Chain.</li>
+        <li><strong>ETH in.</strong> How much the curve grew since a snapshot about an hour earlier.</li>
+        <li><strong>Creator check.</strong> How many other tokens the same wallet launched on Pons in the 3 days, and how many bonded. 10 or more and none bonded is marked as a serial launcher, the same rule as Check.</li>
+      </ul>
+      <p>Only ETH-paired launches are listed. Being close to bonding says nothing about safety; open the full scan before you buy. The data is also available as JSON at <code>GET /api/bonding</code>.</p>
 
       <h2 id="swap">Swap</h2>
       <p><a href="swap.html">Swap</a> buys and sells any Robinhood Chain token with ETH or USDG. NEARL only routes the order: the trade is filled by Uniswap's public contracts, and the liquidity is Uniswap's.</p>
