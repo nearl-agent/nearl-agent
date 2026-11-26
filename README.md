@@ -114,7 +114,7 @@ npm run web     # serve the website locally
 
 ## Security
 
-Found a problem? Please do not open a public issue for anything that could put funds at risk. Contact NEARL on X or Telegram ([t.me/nearlagent](https://t.me/nearlagent)) first.
+Found a problem? Please do not open a public issue for anything that could put funds at risk. Report it privately from this repository's **Security** tab (**Report a vulnerability**). See [SECURITY.md](SECURITY.md). If you cannot use GitHub, contact NEARL on X or Telegram ([t.me/nearlagent](https://t.me/nearlagent)).
 
 ## License
 
