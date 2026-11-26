@@ -81,6 +81,8 @@ ol.steps{color:var(--ink-2);line-height:1.8;max-width:70ch}
       <tr><td>Mythril scan</td><td>Symbolic execution by ConsenSys' Mythril, a time-limited run (up to 10 minutes per contract)</td><td class="ok">No issues detected</td></tr>
     </tbody></table></div>
     <p class="callout"><strong>None of this proves the contracts are bug-free.</strong> Tests only cover the cases someone thought of, fuzzing tries many but not all combinations, and scanners look for known patterns. It lowers the risk; it does not remove it.</p>
+    <p><strong>Independent review.</strong> An outside security team is reviewing NearlGuard, NearlGuardFactory and NearlNotes at the published commit. This is a review, not an audit. Its findings will be fixed before any pool caps go up, and a summary will be published here once the fixes are live.</p>
+    <p><strong>Report a vulnerability.</strong> Please report security problems privately through GitHub: open the <a href="https://github.com/nearl-agent/nearl-agent/security" target="_blank" rel="noopener">Security tab of the NEARL repository</a> and choose <strong>Report a vulnerability</strong>. Do not open a public issue for anything that could put funds at risk.</p>
     <p><strong>Known limits.</strong> No third-party audit yet. Earn does not check Chainlink's sequencer uptime feed (stale prices are still rejected). Earn and Guard support standard ERC-20 tokens only. That is why mainnet amounts stay small and capped.</p>
   </section>
 
