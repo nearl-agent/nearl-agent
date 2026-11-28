@@ -215,7 +215,7 @@ describe("NearlNotes", function () {
   });
 
   describe("oracle safety", function () {
-    it("rejects prices older than maxPriceAge or from before the observation date", async function () {
+    it("rejects prices from before the date, and a first round more than maxPriceAge after it", async function () {
       const ctx = await withSeries();
       const { notes, feed, alice, id } = ctx;
       await notes.connect(alice).deposit(id, USD(100));
@@ -225,8 +225,9 @@ describe("NearlNotes", function () {
       await time.increaseTo(ctx.p.observationTimes[0]);
       await expect(notes.observe(id)).to.be.revertedWithCustomError(notes, "StalePrice");
 
-      await feed.setPrice(PRICE(3000));
+      // The feed stays silent for longer than maxPriceAge (1 day) after the date.
       await time.increase(DAY + 1);
+      await feed.setPrice(PRICE(3000));
       await expect(notes.observe(id)).to.be.revertedWithCustomError(notes, "StalePrice");
     });
 

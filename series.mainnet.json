@@ -4,7 +4,7 @@
   "barrierBps": 7000,
   "autocallBps": 10000,
   "couponBps": 100,
-  "maxPriceAgeSeconds": 10800,
+  "maxPriceAgeSeconds": 21600,
   "subscriptionHours": 72,
   "subscriptionEndISO": "2026-11-30T23:59:00+07:00",
   "observationIntervalDays": 7,

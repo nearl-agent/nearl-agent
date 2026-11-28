@@ -11,7 +11,9 @@ import {AggregatorV3Interface} from "./interfaces/AggregatorV3Interface.sol";
 
 /// @title NEARL structured notes (cash-settled, coupon side)
 /// @notice Users deposit a stablecoin into a note series. On each observation date the
-///         underlying price (Chainlink feed) is compared with the price recorded at start:
+///         underlying price (Chainlink feed) is compared with the price recorded at start.
+///         "The price on a date" is always the first feed round updated at or after that date,
+///         so it does not depend on who calls, or when (subscription end for the start price):
 ///           - price >= autocall level  -> coupon paid, note ends early, full principal back
 ///           - price >= barrier          -> coupon paid
 ///           - price <  barrier          -> no coupon
@@ -38,7 +40,7 @@ contract NearlNotes is Ownable2Step, Pausable, ReentrancyGuard {
         uint16 barrierBps;      // e.g. 7000 = 70% of initial price
         uint16 autocallBps;     // e.g. 10000 = 100% of initial price
         uint16 couponBps;       // coupon per observation, e.g. 240 = 2.4%
-        uint32 maxPriceAge;     // max seconds since the feed's last update
+        uint32 maxPriceAge;     // the first round after a date must come within this many seconds of it
         uint64 subscriptionEnd; // deposits close at this timestamp
         uint64[] observationTimes; // strictly increasing, all after subscriptionEnd
         uint256 perUserCap;     // max deposit per wallet (asset units)
@@ -75,6 +77,8 @@ contract NearlNotes is Ownable2Step, Pausable, ReentrancyGuard {
     uint256 public constant MAX_COUPON_BPS = 2000;   // 20% per observation
     uint256 public constant MAX_AUTOCALL_BPS = 20000; // 200%
     uint256 public constant EMERGENCY_DELAY = 7 days;
+    /// @notice How many rounds start()/observe() walk back from the latest one. Later calls pass the round.
+    uint256 public constant MAX_ROUND_STEPS = 48;
     uint256 private constant BPS = 10_000;
     uint256 private constant ONE = 1e18;
 
@@ -91,6 +95,8 @@ contract NearlNotes is Ownable2Step, Pausable, ReentrancyGuard {
     event Claimed(uint256 indexed id, address indexed user, uint256 coupons, uint256 principal);
     event EmergencyTriggered(uint256 indexed id);
     event IssuerSettled(uint256 indexed id, uint256 amount);
+    /// @notice The feed round used for a date: `index` 0 is the start price, i + 1 is observation i.
+    event PriceRound(uint256 indexed id, uint8 indexed index, uint80 roundId, uint256 updatedAt);
 
     error InvalidParams();
     error WrongStatus();
@@ -102,6 +108,9 @@ contract NearlNotes is Ownable2Step, Pausable, ReentrancyGuard {
     error StalePrice();
     error NothingToClaim();
     error UnknownSeries();
+    error WrongRound();
+    error RoundHintNeeded();
+    error RenounceDisabled();
 
     constructor(IERC20 asset_, address owner_) Ownable(owner_) {
         if (address(asset_) == address(0)) revert InvalidParams();
@@ -170,6 +179,11 @@ contract NearlNotes is Ownable2Step, Pausable, ReentrancyGuard {
         _unpause();
     }
 
+    /// @notice Disabled: without an owner, settleIssuer() could never run and the reserve would stay locked.
+    function renounceOwnership() public view override onlyOwner {
+        revert RenounceDisabled();
+    }
+
     // ------------------------------------------------------------------ users
 
     function deposit(uint256 id, uint256 amount) external nonReentrant whenNotPaused {
@@ -203,8 +217,31 @@ contract NearlNotes is Ownable2Step, Pausable, ReentrancyGuard {
 
     // ------------------------------------------------------------------ keepers (anyone)
 
-    /// @notice Record the initial price once subscription has closed.
+    /// @notice Record the initial price once subscription has closed: the first feed round
+    ///         at or after subscriptionEnd, found by walking back from the latest round.
     function start(uint256 id) external nonReentrant {
+        _start(id, 0);
+    }
+
+    /// @notice Same as start(), for a late call: pass the first round at or after subscriptionEnd.
+    ///         Any other round is refused, so the result is the same whoever calls.
+    function startAt(uint256 id, uint80 roundId) external nonReentrant {
+        if (roundId == 0) revert WrongRound();
+        _start(id, roundId);
+    }
+
+    /// @notice Run the next due observation, at the first feed round at or after its date.
+    function observe(uint256 id) external nonReentrant {
+        _observe(id, 0);
+    }
+
+    /// @notice Same as observe(), for a late call: pass the first round at or after the date.
+    function observeAt(uint256 id, uint80 roundId) external nonReentrant {
+        if (roundId == 0) revert WrongRound();
+        _observe(id, roundId);
+    }
+
+    function _start(uint256 id, uint80 hint) private {
         Series storage s = _get(id);
         if (s.status != Status.Subscription) revert WrongStatus();
         if (block.timestamp < s.subscriptionEnd) revert TooEarly();
@@ -217,14 +254,13 @@ contract NearlNotes is Ownable2Step, Pausable, ReentrancyGuard {
             return;
         }
 
-        int256 price = _readPrice(s, s.subscriptionEnd);
+        int256 price = _priceAt(s, id, 0, s.subscriptionEnd, hint);
         s.initialPrice = price;
         s.status = Status.Active;
         emit Started(id, price);
     }
 
-    /// @notice Run the next due observation.
-    function observe(uint256 id) external nonReentrant {
+    function _observe(uint256 id, uint80 hint) private {
         Series storage s = _get(id);
         if (s.status != Status.Active) revert WrongStatus();
 
@@ -232,7 +268,7 @@ contract NearlNotes is Ownable2Step, Pausable, ReentrancyGuard {
         uint64 t = s.observationTimes[i];
         if (block.timestamp < t) revert TooEarly();
 
-        int256 price = _readPrice(s, t);
+        int256 price = _priceAt(s, id, i + 1, t, hint);
         uint256 levelBps = (uint256(price) * BPS) / uint256(s.initialPrice);
         bool couponPaid;
 
@@ -309,11 +345,45 @@ contract NearlNotes is Ownable2Step, Pausable, ReentrancyGuard {
         }
     }
 
-    /// @dev Reads the feed and rejects non-positive, stale, or pre-`notBefore` prices.
-    function _readPrice(Series storage s, uint64 notBefore) private view returns (int256 price) {
-        (uint80 roundId, int256 answer,, uint256 updatedAt, uint80 answeredInRound) = s.feed.latestRoundData();
-        if (answer <= 0 || answeredInRound < roundId) revert BadPrice();
-        if (updatedAt < notBefore || block.timestamp - updatedAt > s.maxPriceAge) revert StalePrice();
+    /// @dev The price for date `t`: the first feed round updated at or after `t`.
+    ///      With `hint` 0 the round is found by walking back from the latest one (at most
+    ///      MAX_ROUND_STEPS); otherwise `hint` must be that exact round. A round is the first
+    ///      one if the round before it (same phase) was updated before `t`. The first round of a
+    ///      phase has no earlier round in that phase and is accepted as is. The round must also
+    ///      come within maxPriceAge of `t`; if the feed was silent longer, the date can only end
+    ///      through triggerEmergency().
+    function _priceAt(Series storage s, uint256 id, uint8 index, uint64 t, uint80 hint)
+        private
+        returns (int256)
+    {
+        AggregatorV3Interface feed = s.feed;
+        uint80 rid = hint;
+        int256 answer;
+        uint256 updatedAt;
+        if (rid == 0) {
+            (rid, answer,, updatedAt,) = feed.latestRoundData();
+            if (updatedAt < t) revert StalePrice(); // no round since the date yet
+        } else {
+            uint80 got;
+            (got, answer,, updatedAt,) = feed.getRoundData(rid);
+            if (got != rid || updatedAt == 0 || updatedAt < t) revert WrongRound();
+        }
+
+        for (uint256 steps;;) {
+            if (uint64(rid) <= 1) break; // first round of its phase
+            (, int256 prevAnswer,, uint256 prevUpdated,) = feed.getRoundData(rid - 1);
+            if (prevUpdated == 0) revert BadPrice(); // a missing round: the first one cannot be proven
+            if (prevUpdated < t) break;
+            if (hint != 0) revert WrongRound(); // the hint is not the first round after the date
+            if (++steps > MAX_ROUND_STEPS) revert RoundHintNeeded();
+            rid -= 1;
+            answer = prevAnswer;
+            updatedAt = prevUpdated;
+        }
+
+        if (answer <= 0) revert BadPrice();
+        if (updatedAt - t > s.maxPriceAge) revert StalePrice();
+        emit PriceRound(id, index, rid, updatedAt);
         return answer;
     }
 }
